@@ -58,12 +58,13 @@ export class Snake {
         this.score = 0;
         this.foodsEaten = 0;
         this.currentSpeedLevel = 1;
-        this.speed = this.config.baseSpeed;
+        this.moveInterval = this.config.baseSpeed; // 重置移动间隔
         this.food = null;
         
         // 重置计时器
         this.gameStartTime = Date.now();
         this.gameTime = 0;
+        this.lastUpdateTime = Date.now(); // 重置上次更新时间
         
         // 更新状态栏显示
         if (this.scoreText) {

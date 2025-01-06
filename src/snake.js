@@ -4,14 +4,14 @@ export class Snake {
     constructor() {
         // 游戏基础配置
         this.config = {
-            baseSpeed: 10,           // 基础速度
+            baseSpeed: 80,          // 基础移动间隔（毫秒）
             foodsPerSpeedUp: 2,      // 每吃几个食物加速
             speedUpRate: 0.1,        // 每次加速增加的速度比率（相对于基础速度）
             foodCollisionRange: 3,   // 食物碰撞检测范围 (值即为范围大小，如1是1x1，3是3x3)
             gridSize: 20,           // 网格大小
             infoBarHeight: 60,      // 信息栏高度
             obstacleWidth: 4,       // 障碍物第一维度
-            obstacleHeight: 10       // 障碍物第二维度
+            obstacleHeight: 10      // 障碍物第二维度
         };
 
         this.app = new Application();
@@ -19,6 +19,8 @@ export class Snake {
         this.infoBarHeight = this.config.infoBarHeight;
         this.gameStartTime = 0;     // 游戏开始时间
         this.gameTime = 0;          // 当前游戏时间（秒）
+        this.lastUpdateTime = 0;    // 上次更新时间
+        this.moveInterval = this.config.baseSpeed; // 当前移动间隔
     }
     
     async init() {
@@ -225,8 +227,10 @@ export class Snake {
             this.timeText.text = `Time: ${minutes}:${seconds.toString().padStart(2, '0')}`;
         }
         
-        this.frameCount = (this.frameCount || 0) + 1;
-        if(this.frameCount % Math.floor(this.speed) !== 0) return;
+        const currentTime = Date.now();
+        if (currentTime - this.lastUpdateTime < this.moveInterval) return;
+        
+        this.lastUpdateTime = currentTime;
         
         const head = {
             x: this.snake[0].x + this.direction.x,
@@ -307,7 +311,7 @@ export class Snake {
             // 计算当前应该达到的速度等级（线性增长）
             const speedUpTimes = Math.floor(this.foodsEaten / this.config.foodsPerSpeedUp);
             this.currentSpeedLevel = 1 + (speedUpTimes * this.config.speedUpRate);
-            this.speed = this.config.baseSpeed / this.currentSpeedLevel;
+            this.moveInterval = this.config.baseSpeed / this.currentSpeedLevel;
         }
         
         this.scoreText.text = `Score: ${this.score}`;

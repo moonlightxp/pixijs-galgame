@@ -1,7 +1,7 @@
 export default {
   base: '/pixijs-galgame/',
   build: {
-    outDir: 'dist',
+    outDir: 'docs',
     assetsDir: 'assets',
   }
 } 

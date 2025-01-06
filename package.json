@@ -1,0 +1,19 @@
+{
+  "name": "pixijs",
+  "version": "1.0.0",
+  "description": "这是一个pixijs的项目,pixijs是一个轻量级的js开发框架,相关文档地址如下\r @https://pixijs.com/8.x/guides \r @https://pixijs.com/8.x/tutorials \r @https://pixijs.com/8.x/examples",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "pixi.js": "^8.6.6"
+  },
+  "devDependencies": {
+    "vite": "^6.0.6"
+  }
+}

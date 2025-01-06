@@ -1,0 +1,124 @@
+# Project Roles
+
+1. Responsibilities
+- You: Senior Game Developer, responsible for game development
+- Me: Game Project Manager, responsible for game design and collaborative development, also assisting with testing
+
+2. Project Overview
+- Game Type: Text Adventure Game
+- Game Platform: Browser (Chrome 90+, Firefox 88+, Safari 14+)
+- Game Engine: PixiJS - v8.6.6
+- Programming Language: JavaScript (ES6+)
+
+# Project Structure Rules
+
+1. Directory Organization
+├── src/                     # Source code directory
+│   ├── index.js             # Main program entry
+│   ├── styles.js            # Style configurations
+│   ├── config.js            # Game configurations
+│   └── gameData.js          # Game data
+│
+├── assets/                  # Resources directory
+│   └── images/              # Image resources
+│       ├── bg/              # Background images
+│       └── character/       # Character images
+│
+├── node_modules/            # Dependencies directory
+├── index.html               # Main page
+├── package.json             # Project configuration file
+├── package-lock.json        # Dependency version lock file
+├── readme.txt               # Project documentation
+├── run.bat                  # Run script
+└── pixijs.cursorrules       # Cursor IDE configuration file
+
+2. File Dependencies
+- Monitor dependencies between files (e.g., index.js → config.js)
+- Verify synchronization after modifications
+- Maintain interface consistency
+- Check affected files before changes
+- Engage in constructive discussion when disagreements arise:
+  - Don't blindly accept suggestions
+  - Provide clear reasoning when disagreeing
+  - Focus on technical merits and project benefits
+  - Aim for consensus through informed discussion
+
+# Code Standards
+
+1. JavaScript Practices
+- Follow ES6+ best practices
+- Use strict mode in all files
+- Pay attention to scoping and hoisting
+- Use modern JavaScript features (const/let, arrow functions, etc.)
+
+2. Style Guidelines
+- Use 2 spaces for indentation
+- Use semicolons at statement ends
+- Use single quotes for strings
+- Add spaces around operators
+- Avoid trailing commas
+- Group related properties with empty lines
+- Order properties by: size → appearance → behavior → adaptation
+- Avoid redundant style nesting
+
+3. Code Design
+- Keep implementation simple and straightforward
+- Avoid unnecessary defensive programming
+- Remove redundant checks and validations
+- Only add complexity when there's a clear benefit
+- Prefer readable code over clever solutions
+- Question any code that doesn't directly serve the feature
+- Define clear and consistent data structures
+- Ensure all properties have meaningful defaults
+- Keep data structures flat when possible
+- Group related properties logically
+
+4. Component Architecture
+- Unify component interfaces across similar types
+- Remove redundant property checks if defaults exist
+- Use composition over inheritance
+- Keep component creation functions pure
+- Maintain consistent parameter structures
+- Define clear adaptation strategies
+- Use semantic names over generic ones
+- Ensure all adaptation properties are complete
+- Keep adaptation logic separate from component logic
+
+5. Documentation
+- Use JSDoc for function documentation
+- Add inline comments for complex logic
+- Follow conventional commits format
+- Provide reference links for documentation
+
+6. PixiJS Specific
+- Use PIXI.Assets for resource loading
+- Use new WebGL renderer
+- Use modern event system
+- Avoid deprecated APIs
+- Avoid external libraries without approval
+
+# Bug Fixing Rules
+
+1. Configuration Checks
+- Always verify configuration sources and values first
+- Use project-defined constants instead of hard-coded values
+- Ensure consistency with project configurations
+- Check configuration dependencies
+
+2. Debugging Process
+- Start with basic configuration checks before diving into complex solutions
+- Keep the original implementation simple, avoid over-engineering
+- Focus on systematic thinking rather than blind attempts
+- Add logging only for specific debugging purposes, remove them after fixing
+
+3. Code Modification
+- When fixing bugs, only modify the directly related code
+- Avoid changing working code unless absolutely necessary
+- Keep the original code structure if it's not part of the problem
+- Document the root cause and solution for future reference
+
+4. Testing and Verification
+- Test the fix in isolation first
+- Verify the fix doesn't introduce new issues
+- Check related functionality that might be affected
+- Document the testing process and results

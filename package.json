@@ -1,19 +1,20 @@
 {
-  "name": "pixijs",
+  "name": "pixijs-game",
   "version": "1.0.0",
-  "description": "这是一个pixijs的项目,pixijs是一个轻量级的js开发框架,相关文档地址如下\r @https://pixijs.com/8.x/guides \r @https://pixijs.com/8.x/tutorials \r @https://pixijs.com/8.x/examples",
+  "description": "",
   "main": "index.js",
   "scripts": {
     "dev": "vite",
-    "build": "vite build"
+    "build": "vite build",
+    "preview": "vite preview"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "pixi.js": "^8.6.6"
+    "pixi.js": "^8.0.0"
   },
   "devDependencies": {
-    "vite": "^6.0.6"
+    "vite": "^5.0.10"
   }
 }

@@ -1,5 +1,3 @@
-import * as UI_CREATER from './ui.js';
-
 /**
  * 布局配置
  */
@@ -90,6 +88,18 @@ export const PAGE = {
 /**
  * UI组件默认样式
  */
+export const POS_ADAPT = {
+    CENTER:       { pivot: { x: 0.5, y: 0.5 }, pos: { x: 0.5, y: 0.5 } },
+    TOP:          { pivot: { x: 0.5, y: 0   }, pos: { x: 0.5, y: 0   } },
+    BOTTOM:       { pivot: { x: 0.5, y: 1   }, pos: { x: 0.5, y: 1   } },
+    LEFT:         { pivot: { x: 0, y: 0.5   }, pos: { x: 0, y: 0.5   } },
+    RIGHT:        { pivot: { x: 1, y: 0.5   }, pos: { x: 1, y: 0.5   } },
+    TOP_LEFT:     { pivot: { x: 0, y: 0     }, pos: { x: 0, y: 0     } },
+    TOP_RIGHT:    { pivot: { x: 1, y: 0     }, pos: { x: 1, y: 0     } },
+    BOTTOM_LEFT:  { pivot: { x: 0, y: 1     }, pos: { x: 0, y: 1     } },
+    BOTTOM_RIGHT: { pivot: { x: 1, y: 1     }, pos: { x: 1, y: 1     } }
+};
+
 export const DEFAULT_STYLES = {
     button: {
         width: 120,
@@ -103,7 +113,7 @@ export const DEFAULT_STYLES = {
 
         zIndex: 1000,
 
-        posAdapt: UI_CREATER.POS_ADAPT.TOP_LEFT,
+        posAdapt: POS_ADAPT.TOP_LEFT,
         offset: { x: 0, y: 0 }
     },
     
@@ -119,7 +129,7 @@ export const DEFAULT_STYLES = {
 
         zIndex: 1000,
 
-        posAdapt: UI_CREATER.POS_ADAPT.TOP_LEFT,
+        posAdapt: POS_ADAPT.TOP_LEFT,
         offset: { x: 0, y: 0 }
     },
     
@@ -133,7 +143,7 @@ export const DEFAULT_STYLES = {
 
         zIndex: 1000,
 
-        posAdapt: UI_CREATER.POS_ADAPT.TOP_LEFT,
+        posAdapt: POS_ADAPT.TOP_LEFT,
         offset: { x: 0, y: 0 }
     },
     
@@ -146,7 +156,7 @@ export const DEFAULT_STYLES = {
 
         zIndex: 1000,
 
-        posAdapt: UI_CREATER.POS_ADAPT.TOP_LEFT,
+        posAdapt: POS_ADAPT.TOP_LEFT,
         offset: { x: 0, y: 0 }
     },
     
@@ -161,7 +171,7 @@ export const DEFAULT_STYLES = {
 
         zIndex: 1000,
 
-        posAdapt: UI_CREATER.POS_ADAPT.TOP_LEFT,
+        posAdapt: POS_ADAPT.TOP_LEFT,
         offset: { x: 0, y: 0 }
     }
 }; 

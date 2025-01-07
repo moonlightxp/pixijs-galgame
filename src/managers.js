@@ -1,5 +1,4 @@
 import { Assets, Sprite, Text, Graphics, Container } from 'pixi.js';
-import { uiCreateButton, uiCreateText, updateUI, POS_ADAPT } from './ui.js';
 import { SCREEN } from './styles.js';
 import { ASSET_PATHS } from './config.js';
 import { NormalScene, SelectScene } from './scenes.js';

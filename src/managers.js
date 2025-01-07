@@ -1,14 +1,79 @@
 import { Assets, Sprite, Text, Graphics, Container } from 'pixi.js';
 import { SCREEN } from './styles.js';
 import { ASSET_PATHS } from './config.js';
-import { NormalScene, SelectScene } from './scenes.js';
+import { DialogScene, SelectScene, StartScene } from './scenes.js';
+
+/** 音乐管理器 */
+export class MusicManager {
+    constructor() {
+        this.currentMusic = null;
+        this.audioElement = null;
+        this.pendingMusic = null;
+        this.hasInteracted = false;
+
+        // 监听用户交互
+        document.addEventListener('click', () => {
+            this.hasInteracted = true;
+            if (this.pendingMusic) {
+                this.playMusic(this.pendingMusic);
+                this.pendingMusic = null;
+            }
+        }, { once: true });
+    }
+
+    /** 播放音乐 */
+    async playMusic(musicFile) {
+        // 如果是相同的音乐，不做任何操作
+        if (this.currentMusic === musicFile) return;
+
+        // 如果用户还没有交互，保存待播放的音乐
+        if (!this.hasInteracted) {
+            this.pendingMusic = musicFile;
+            return;
+        }
+
+        // 停止当前音乐
+        if (this.audioElement) {
+            this.audioElement.pause();
+            this.audioElement = null;
+        }
+
+        try {
+            // 播放新音乐
+            this.audioElement = new Audio(ASSET_PATHS.music + musicFile);
+            this.audioElement.loop = true;
+            await this.audioElement.play();
+            this.currentMusic = musicFile;
+        } catch (error) {
+            console.warn('Failed to play music:', error);
+            // 如果是用户交互问题，保存待播放的音乐
+            if (error.name === 'NotAllowedError') {
+                this.pendingMusic = musicFile;
+            }
+        }
+    }
+
+    /** 停止音乐 */
+    stopMusic() {
+        if (this.audioElement) {
+            this.audioElement.pause();
+            this.audioElement = null;
+        }
+        this.currentMusic = null;
+        this.pendingMusic = null;
+    }
+}
 
 /** 场景管理器 */
 export class SceneManager {
     constructor(game) {
         this.game = game;
-        this.normalScene = new NormalScene(game);
-        this.selectScene = new SelectScene(game);
+        this.currentScene = null;
+        this.sceneHandlers = {
+            'start': new StartScene(game),
+            'dialog': new DialogScene(game),
+            'select': new SelectScene(game)
+        };
     }
 
     /** 获取当前场景 */
@@ -24,15 +89,11 @@ export class SceneManager {
         this.game.state.dialog.currentDialogIndex = 0;
         
         const scene = this.getCurrentScene();
-        switch (scene.type) {
-            case 'normal':
-                await this.normalScene.handle(scene);
-                break;
-            case 'select':
-                await this.selectScene.handle(scene);
-                break;
-            default:
-                console.error('Unknown scene type:', scene.type);
+        const handler = this.sceneHandlers[scene.type];
+        if (handler) {
+            await handler.handle(scene);
+        } else {
+            console.error('Unknown scene type:', scene.type);
         }
     }
 }
@@ -93,7 +154,7 @@ export class UIManager {
         
         dialogBox.eventMode = 'static';
         dialogBox.cursor = 'pointer';
-        dialogBox.on('click', () => this.game.dialogManager.handleTextClick());
+        dialogBox.on('click', () => this.game.contentManager.handleTextClick());
         
         this.nameText = new Text({
             text: '',
@@ -158,15 +219,15 @@ export class UIManager {
     }
 }
 
-/** 对话管理器 */
-export class DialogManager {
+/** 内容管理器 */
+export class ContentManager {
     constructor(game) {
         this.game = game;
         this.currentDialogId = 0;
         this.isShowingDialog = false;
     }
 
-    /** 检查是否有下一条文本 */
+    /** 检查是否有下一条内容 */
     hasNextContent(scene) {
         return this.game.state.dialog.currentDialogIndex < scene.contents.length - 1;
     }
@@ -203,7 +264,7 @@ export class DialogManager {
         this.isShowingDialog = false;
     }
 
-    /** 处理文本框点击 */
+    /** 处理内容点击 */
     handleTextClick() {
         const currentScene = this.game.sceneManager.getCurrentScene();
         if (!currentScene) return;
@@ -220,13 +281,22 @@ export class DialogManager {
     /** 显示下一条内容 */
     async showNextContent() {
         const currentScene = this.game.sceneManager.getCurrentScene();
-        if (!currentScene || currentScene.type !== 'normal') return;
+        if (!currentScene || currentScene.type !== 'dialog') return;
 
         if (this.hasNextContent(currentScene)) {
             this.game.state.dialog.currentDialogIndex++;
-            await this.game.sceneManager.normalScene.updateSceneDisplay(currentScene, this.game.state.dialog.currentDialogIndex);
             const content = this.getCurrentContent(currentScene);
-            await this.showText(content.text, content.name);
+
+            // 播放音乐
+            if (content.music) {
+                this.game.musicManager.playMusic(content.music);
+            }
+
+            const handler = this.game.sceneManager.sceneHandlers[currentScene.type];
+            if (handler) {
+                await handler.updateSceneDisplay(currentScene, this.game.state.dialog.currentDialogIndex);
+                await this.showText(content.text, content.name);
+            }
         } else if (currentScene.nextScene) {
             this.game.uiManager.showNextSceneButton();
         }

@@ -2,7 +2,7 @@ import { Application, Container, Graphics } from 'pixi.js';
 import { SCREEN, LAYOUT, UI, PAGE } from './styles.js';
 import { GAME_DATA } from './gameData.js';
 import { INITIAL_STATE, CONTAINERS, APP_CONFIG } from './config.js';
-import { SceneManager, UIManager, DialogManager } from './managers.js';
+import { SceneManager, UIManager, ContentManager, MusicManager } from './managers.js';
 
 /** Galgame引擎 */
 class GalGameEngine {
@@ -29,7 +29,8 @@ class GalGameEngine {
         // 管理器
         this.sceneManager = new SceneManager(this);
         this.uiManager = new UIManager(this);
-        this.dialogManager = new DialogManager(this);
+        this.contentManager = new ContentManager(this);
+        this.musicManager = new MusicManager();
     }
 
     /** 初始化应用 */
@@ -68,17 +69,38 @@ class GalGameEngine {
 
     /** 重新开始游戏 */
     async restartGame() {
-        this.dialogManager.currentDialogId++;
-        this.dialogManager.isShowingDialog = false;
+        // 重置内容管理器状态
+        this.contentManager.currentDialogId++;
+        this.contentManager.isShowingDialog = false;
+        
+        // 重置游戏状态
+        this.state = {
+            dialog: {
+                currentSceneId: null,
+                currentDialogIndex: 0,
+                speed: 50
+            },
+            assets: {
+                currentBg: null,
+                currentCharacterLeft: null,
+                currentCharacterCenter: null,
+                currentCharacterRight: null,
+                currentActiveCharacters: []
+            }
+        };
+        
+        // 停止当前音乐
+        this.musicManager.stopMusic();
         
         await new Promise(resolve => setTimeout(resolve, 50));
         
+        // 清理UI和容器
         this.uiManager.clearAll();
-        this.state = structuredClone(INITIAL_STATE);
         this.containers.character.removeChildren();
         this.containers.background.removeChildren();
-
-        const initialScene = this.sceneManager.getCurrentScene();
+        
+        // 重新加载初始场景
+        const initialScene = this.gameData[Object.keys(this.gameData)[0]];
         if (initialScene) {
             await this.sceneManager.switchScene(initialScene.id);
         }

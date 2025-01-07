@@ -1,20 +1,41 @@
 import * as PIXI from 'pixi.js';
 import { Assets, Sprite } from 'pixi.js';
 import { SCREEN } from './styles.js';
-import { ASSET_PATHS } from './config.js';
+import { ASSET_PATHS, CHARACTER_EFFECTS } from './config.js';
 
-/** 普通场景类 */
-export class NormalScene {
+/** 开始场景类 */
+export class StartScene {
     constructor(game) {
         this.game = game;
     }
 
-    /** 处理普通场景 */
+    /** 处理开始场景 */
+    async handle(scene) {
+        // TODO: 实现开始场景的逻辑
+        console.log('Start scene handling is not implemented yet');
+    }
+}
+
+/** 对话场景类 */
+export class DialogScene {
+    constructor(game) {
+        this.game = game;
+    }
+
+    /** 处理对话场景 */
     async handle(scene) {
         await this.preloadSceneAssets(scene);
-        await this.updateSceneDisplay(scene, 0);
-        const content = scene.contents[0];
-        await this.game.dialogManager.showText(content.text, content.name);
+        
+        const content = scene.contents[this.game.state.dialog.currentDialogIndex];
+        if (!content) return;
+
+        // 播放音乐
+        if (content.music) {
+            this.game.musicManager.playMusic(content.music);
+        }
+
+        await this.updateSceneDisplay(scene, this.game.state.dialog.currentDialogIndex);
+        await this.game.contentManager.showText(content.text, content.name);
     }
 
     /** 预加载场景所有资源 */
@@ -61,6 +82,13 @@ export class NormalScene {
             return;
         }
 
+        const activeCharacters = content.active_characters || [];
+        const hasActiveCharactersChanged = 
+            !this.game.state.assets.currentActiveCharacters ||
+            activeCharacters.length !== this.game.state.assets.currentActiveCharacters.length ||
+            activeCharacters.some(char => !this.game.state.assets.currentActiveCharacters.includes(char)) ||
+            this.game.state.assets.currentActiveCharacters.some(char => !activeCharacters.includes(char));
+
         // 更新背景
         if (content.bg && content.bg !== this.game.state.assets.currentBg) {
             const bg = this.game.assetCache.backgrounds.get(content.bg);
@@ -69,98 +97,74 @@ export class NormalScene {
             this.game.state.assets.currentBg = content.bg;
         }
 
-        // 更新左侧角色
-        if (content.character_left !== this.game.state.assets.currentCharacterLeft) {
-            if (content.character_left) {
-                let character;
-                const cacheKey = `left_${content.character_left}`;
-                if (this.game.assetCache.characters.has(cacheKey)) {
-                    character = this.game.assetCache.characters.get(cacheKey);
-                } else {
-                    const baseCharacter = this.game.assetCache.characters.get(content.character_left);
-                    character = new Sprite(baseCharacter.texture);
-                    this.game.assetCache.characters.set(cacheKey, character);
-                }
-                this.setCharacterPosition(character, 'left');
-                character.characterPosition = 'left';
-                
-                // 保存其他位置的角色
-                const centerChar = this.game.containers.character.children.find(c => c.characterPosition === 'center');
-                const rightChar = this.game.containers.character.children.find(c => c.characterPosition === 'right');
-                this.game.containers.character.removeChildren();
-                
-                this.game.containers.character.addChild(character);
-                if (centerChar) this.game.containers.character.addChild(centerChar);
-                if (rightChar) this.game.containers.character.addChild(rightChar);
-            } else {
-                const others = this.game.containers.character.children.filter(c => c.characterPosition !== 'left');
-                this.game.containers.character.removeChildren();
-                others.forEach(char => this.game.containers.character.addChild(char));
-            }
-            this.game.state.assets.currentCharacterLeft = content.character_left;
-        }
+        // 更新角色
+        const positions = ['left', 'center', 'right'];
+        positions.forEach(pos => {
+            const contentKey = `character_${pos}`;
+            const stateKey = `currentCharacter${pos.charAt(0).toUpperCase() + pos.slice(1)}`;
+            
+            if (content[contentKey] !== this.game.state.assets[stateKey] || hasActiveCharactersChanged) {
+                if (content[contentKey]) {
+                    let character;
+                    const cacheKey = `${pos}_${content[contentKey]}`;
+                    if (this.game.assetCache.characters.has(cacheKey)) {
+                        character = this.game.assetCache.characters.get(cacheKey);
+                    } else {
+                        const baseCharacter = this.game.assetCache.characters.get(content[contentKey]);
+                        character = new Sprite(baseCharacter.texture);
+                        this.game.assetCache.characters.set(cacheKey, character);
+                    }
+                    this.setCharacterPosition(character, pos);
+                    character.characterPosition = pos;
+                    this.setCharacterEffect(character, activeCharacters);
 
-        // 更新中间角色
-        if (content.character_center !== this.game.state.assets.currentCharacterCenter) {
-            if (content.character_center) {
-                let character;
-                const cacheKey = `center_${content.character_center}`;
-                if (this.game.assetCache.characters.has(cacheKey)) {
-                    character = this.game.assetCache.characters.get(cacheKey);
-                } else {
-                    const baseCharacter = this.game.assetCache.characters.get(content.character_center);
-                    character = new Sprite(baseCharacter.texture);
-                    this.game.assetCache.characters.set(cacheKey, character);
-                }
-                this.setCharacterPosition(character, 'center');
-                character.characterPosition = 'center';
-                
-                // 保存其他位置的角色
-                const leftChar = this.game.containers.character.children.find(c => c.characterPosition === 'left');
-                const rightChar = this.game.containers.character.children.find(c => c.characterPosition === 'right');
-                this.game.containers.character.removeChildren();
-                
-                if (leftChar) this.game.containers.character.addChild(leftChar);
-                this.game.containers.character.addChild(character);
-                if (rightChar) this.game.containers.character.addChild(rightChar);
-            } else {
-                const others = this.game.containers.character.children.filter(c => c.characterPosition !== 'center');
-                this.game.containers.character.removeChildren();
-                others.forEach(char => this.game.containers.character.addChild(char));
-            }
-            this.game.state.assets.currentCharacterCenter = content.character_center;
-        }
+                    // 保存其他位置的角色
+                    const otherChars = this.game.containers.character.children
+                        .filter(c => c.characterPosition !== pos);
+                    
+                    if (hasActiveCharactersChanged) {
+                        otherChars.forEach(char => this.setCharacterEffect(char, activeCharacters));
+                    }
 
-        // 更新右侧角色
-        if (content.character_right !== this.game.state.assets.currentCharacterRight) {
-            if (content.character_right) {
-                let character;
-                const cacheKey = `right_${content.character_right}`;
-                if (this.game.assetCache.characters.has(cacheKey)) {
-                    character = this.game.assetCache.characters.get(cacheKey);
+                    this.game.containers.character.removeChildren();
+                    
+                    // 按位置顺序重新添加角色
+                    positions.forEach(addPos => {
+                        if (addPos === pos) {
+                            this.game.containers.character.addChild(character);
+                        } else {
+                            const existingChar = otherChars.find(c => c.characterPosition === addPos);
+                            if (existingChar) {
+                                this.game.containers.character.addChild(existingChar);
+                            }
+                        }
+                    });
                 } else {
-                    const baseCharacter = this.game.assetCache.characters.get(content.character_right);
-                    character = new Sprite(baseCharacter.texture);
-                    this.game.assetCache.characters.set(cacheKey, character);
+                    const others = this.game.containers.character.children
+                        .filter(c => c.characterPosition !== pos);
+                    
+                    if (hasActiveCharactersChanged) {
+                        others.forEach(char => this.setCharacterEffect(char, activeCharacters));
+                    }
+
+                    this.game.containers.character.removeChildren();
+                    others.forEach(char => this.game.containers.character.addChild(char));
                 }
-                this.setCharacterPosition(character, 'right');
-                character.characterPosition = 'right';
-                
-                // 保存其他位置的角色
-                const leftChar = this.game.containers.character.children.find(c => c.characterPosition === 'left');
-                const centerChar = this.game.containers.character.children.find(c => c.characterPosition === 'center');
-                this.game.containers.character.removeChildren();
-                
-                if (leftChar) this.game.containers.character.addChild(leftChar);
-                if (centerChar) this.game.containers.character.addChild(centerChar);
-                this.game.containers.character.addChild(character);
-            } else {
-                const others = this.game.containers.character.children.filter(c => c.characterPosition !== 'right');
-                this.game.containers.character.removeChildren();
-                others.forEach(char => this.game.containers.character.addChild(char));
+                this.game.state.assets[stateKey] = content[contentKey];
             }
-            this.game.state.assets.currentCharacterRight = content.character_right;
+        });
+
+        if (hasActiveCharactersChanged) {
+            this.game.state.assets.currentActiveCharacters = [...activeCharacters];
         }
+    }
+
+    /** 设置角色效果 */
+    setCharacterEffect(character, activeCharacters) {
+        const isActive = activeCharacters.includes(`character_${character.characterPosition}`);
+        const effects = isActive ? CHARACTER_EFFECTS.active : CHARACTER_EFFECTS.inactive;
+        character.tint = effects.tint;
+        character.alpha = effects.alpha;
     }
 
     /** 设置角色位置 */

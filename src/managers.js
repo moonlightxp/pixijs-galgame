@@ -1,4 +1,5 @@
-import { Assets, Sprite, Text, Graphics } from 'pixi.js';
+import { Assets, Sprite, Text, Graphics, Container } from 'pixi.js';
+import { uiCreateButton, uiCreateText, updateUI, POS_ADAPT } from './ui.js';
 import { SCREEN } from './styles.js';
 import { ASSET_PATHS } from './config.js';
 import { NormalScene, SelectScene } from './scenes.js';
@@ -116,7 +117,10 @@ export class UIManager {
     createRestartButton() {
         const button = document.createElement('button');
         button.textContent = '重新开始';
-        Object.assign(button.style, this.game.ui.button.base);
+        Object.assign(button.style, {
+            ...this.game.ui.button.base,
+            ...this.game.ui.button.normal
+        });
 
         button.addEventListener('mouseenter', () => Object.assign(button.style, this.game.ui.button.hover));
         button.addEventListener('mouseleave', () => Object.assign(button.style, this.game.ui.button.normal));

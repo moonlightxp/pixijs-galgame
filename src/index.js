@@ -3,8 +3,6 @@ import { SCREEN, LAYOUT, UI, PAGE } from './styles.js';
 import { GAME_DATA } from './gameData.js';
 import { INITIAL_STATE, CONTAINERS, APP_CONFIG } from './config.js';
 import { SceneManager, UIManager, DialogManager } from './managers.js';
-import { test } from './test.js';
-import { snake } from './snake.js';
 
 /** Galgame引擎 */
 class GalGameEngine {
@@ -89,6 +87,4 @@ class GalGameEngine {
 const galGameEngine = new GalGameEngine();
 
 // 启动环境
-// galGameEngine.init();
-// test.init();
-snake.init();
+galGameEngine.init();

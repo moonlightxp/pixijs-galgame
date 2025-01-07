@@ -11,8 +11,49 @@ export class StartScene {
 
     /** 处理开始场景 */
     async handle(scene) {
-        // TODO: 实现开始场景的逻辑
-        console.log('Start scene handling is not implemented yet');
+        // 清理现有UI和容器
+        this.game.uiManager.clearAll();
+        this.game.containers.character.removeChildren();
+        this.game.containers.background.removeChildren();
+
+        // 加载并显示背景
+        if (scene.background) {
+            const cacheKey = scene.background;
+            if (!this.game.assetCache.backgrounds.has(cacheKey)) {
+                const sprite = Sprite.from(await Assets.load(ASSET_PATHS.background + scene.background));
+                sprite.width = SCREEN.width;
+                sprite.height = SCREEN.height;
+                this.game.assetCache.backgrounds.set(cacheKey, sprite);
+            }
+            const bg = this.game.assetCache.backgrounds.get(cacheKey);
+            this.game.containers.background.addChild(bg);
+        }
+
+        // 播放音乐
+        if (scene.music) {
+            this.game.musicManager.playMusic(scene.music);
+        }
+
+        // 创建开始按钮
+        const button = document.createElement('button');
+        button.textContent = '开始游戏';
+        Object.assign(button.style, {
+            ...this.game.ui.button.base,
+            ...this.game.ui.button.normal,
+            position: 'absolute',
+            left: '50%',
+            top: '50%',
+            transform: 'translate(-50%, -50%)'
+        });
+
+        button.addEventListener('mouseenter', () => Object.assign(button.style, this.game.ui.button.hover));
+        button.addEventListener('mouseleave', () => Object.assign(button.style, this.game.ui.button.normal));
+        button.addEventListener('click', () => {
+            button.remove();
+            this.game.sceneManager.switchScene(scene.nextScene);
+        });
+
+        this.game.wrapper.appendChild(button);
     }
 }
 
@@ -24,6 +65,9 @@ export class DialogScene {
 
     /** 处理对话场景 */
     async handle(scene) {
+        // 创建对话框
+        this.game.uiManager.createDialogBox();
+        
         await this.preloadSceneAssets(scene);
         
         const content = scene.contents[this.game.state.dialog.currentDialogIndex];
@@ -43,40 +87,39 @@ export class DialogScene {
         // 收集所有需要加载的资源
         const assets = new Set();
         const characterAssets = new Set();
-        const musicAssets = new Set();
+        const voiceAssets = new Set();
 
         scene.contents.forEach(content => {
             if (content.bg) assets.add(content.bg);
             if (content.character_left) characterAssets.add(content.character_left);
             if (content.character_center) characterAssets.add(content.character_center);
             if (content.character_right) characterAssets.add(content.character_right);
-            if (content.music) musicAssets.add(content.music);
+            if (content.voice) voiceAssets.add(content.voice);
         });
 
         // 加载所有背景
         const bgPromises = Array.from(assets).map(async bg => {
-            if (!this.game.assetCache.backgrounds.has(bg)) {
+            const cacheKey = bg;
+            if (!this.game.assetCache.backgrounds.has(cacheKey)) {
                 const sprite = Sprite.from(await Assets.load(ASSET_PATHS.background + bg));
                 sprite.width = SCREEN.width;
                 sprite.height = SCREEN.height;
-                this.game.assetCache.backgrounds.set(bg, sprite);
+                this.game.assetCache.backgrounds.set(cacheKey, sprite);
             }
         });
 
         // 加载所有角色
         const characterPromises = Array.from(characterAssets).map(async char => {
-            if (char && !this.game.assetCache.characters.has(char)) {
+            const cacheKey = char;
+            if (char && !this.game.assetCache.characters.has(cacheKey)) {
                 const sprite = Sprite.from(await Assets.load(ASSET_PATHS.character + char));
                 sprite.anchor.set(0.5);
-                this.game.assetCache.characters.set(char, sprite);
+                this.game.assetCache.characters.set(cacheKey, sprite);
             }
         });
 
-        // 预加载所有音乐
-        const musicPromise = this.game.musicManager.preloadMusic(Array.from(musicAssets));
-
         // 等待所有资源加载完成
-        await Promise.all([...bgPromises, ...characterPromises, musicPromise]);
+        await Promise.all([...bgPromises, ...characterPromises]);
     }
 
     /** 更新场景显示 */
@@ -111,7 +154,7 @@ export class DialogScene {
             if (content[contentKey] !== this.game.state.assets[stateKey] || hasActiveCharactersChanged) {
                 if (content[contentKey]) {
                     let character;
-                    const cacheKey = `${pos}_${content[contentKey]}`;
+                    const cacheKey = content[contentKey];
                     if (this.game.assetCache.characters.has(cacheKey)) {
                         character = this.game.assetCache.characters.get(cacheKey);
                     } else {

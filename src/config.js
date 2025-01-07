@@ -24,7 +24,8 @@ export const ASSET_PATHS = {
     background: 'assets/images/bg/',
     character: 'assets/images/character/',
     music: 'assets/audio/music/',
-    voice: 'assets/audio/voice/'
+    voice: 'assets/audio/voice/',
+    sound: 'assets/audio/sound/'
 };
 
 /**
@@ -65,4 +66,4 @@ export const CHARACTER_EFFECTS = {
         tint: 0x404040,    // 灰色滤镜
         alpha: 1.0         // 稍微透明
     }
-};
+}; 

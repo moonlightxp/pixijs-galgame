@@ -2,31 +2,24 @@
  * 游戏场景数据配置
  * 
  * 场景类型：
- * - start: 开始场景，暂时没有具体功能,留空备用
+ * - start: 开始场景,也就是登录界面
  * - dialog: 对话场景，有对话内容
  * - select: 选择场景,暂时没有具体功能,留空备用
  */
 export const GAME_DATA = {
-    // scene_0: {
-    //     id: 'scene_0',
-    //     type: 'start',
-    //     nextScene: 'scene_1',
-
-    //     infos: {
-    //         title: 'Galgame',
-    //         author: 'Star Union',
-    //         button: 'Start',
-
-    //         bg: 'bg_001.png',
-    //         music: 'music_scene01.mp3'
-    //     }
-    // },
+    start_scene: {
+        id: 'start_scene',
+        type: 'start',
+        nextScene: 'scene_1',
+        
+        background: 'bg_001.png',
+        music: 'music_scene01.mp3'
+    },
 
     scene_1: {
         id: 'scene_1',
         type: 'dialog',
         nextScene: 'scene_2',
-
         contents: [                                            
             {
                 bg: 'bg_001.png',
@@ -40,7 +33,8 @@ export const GAME_DATA = {
                 name: '左:',
                 text: '欢迎来到测试场景...',
 
-                music: 'music_scene01.mp3'
+                music: 'music_scene01.mp3',
+                voice: 'c_001.wav.mp3'
             },
 
             {
@@ -55,7 +49,8 @@ export const GAME_DATA = {
                 name: '中:',
                 text: '这是一段较长的对话，用来测试文本换行和打字机效果。我们需要确保文本显示正常，不会出现排版问题。',
 
-                music: 'music_scene02.mp3'
+                music: 'music_scene02.mp3',
+                voice: 'c_002.wav.mp3'
             },
 
             {
@@ -70,7 +65,8 @@ export const GAME_DATA = {
                 name: '右:',
                 text: '对话结束,测试通过。',
 
-                music: 'music_scene03.mp3'
+                music: 'music_scene03.mp3',
+                voice: 'c_003.wav.mp3'
             }
         ]
     },
@@ -80,44 +76,34 @@ export const GAME_DATA = {
         type: 'select',
         nextScene: '',
 
-        characters: [
+        locations: [
             {
-                id: 'character_1',
-                name: '角色1',
-                image: 'character1.png'
+                bg: 'bg_001.png',
+                music: 'music_scene01.mp3'
             },
-
             {
-                id: 'character_2',
-                name: '角色2',
-                image: 'character2.png'
+                bg: 'bg_002.png',
+                music: 'music_scene02.mp3'
             },
-
             {
-                id: 'character_3',
-                name: '角色3',
-                image: 'character3.png'
+                bg: 'bg_003.png',
+                music: 'music_scene03.mp3'
             }
         ],
 
-        backgrounds: [
+        characters: [
             {
-                id: 'background_1',
-                name: '背景1',
-                image: 'background1.png'
+                name: '角色1',
+                image: 'c_001.png'
             },
-
             {
-                id: 'background_2',
-                name: '背景2',
-                image: 'background2.png'
+                name: '角色2',
+                image: 'c_002.png'
             },
-
             {
-                id: 'background_3',
-                name: '背景3',
-                image: 'background3.png'
+                name: '角色3',
+                image: 'c_003.png'
             }
         ]
-    },
+    }
 }; 

@@ -3,6 +3,84 @@ import { SCREEN } from './styles.js';
 import { ASSET_PATHS } from './config.js';
 import { DialogScene, SelectScene, StartScene } from './scenes.js';
 
+/** 音乐管理器 */
+export class MusicManager {
+    constructor() {
+        this.currentMusic = null;
+        this.audioElement = null;
+        this.pendingMusic = null;
+        this.hasInteracted = false;
+        this.preloadedAudios = new Map();
+
+        // 监听用户交互
+        document.addEventListener('click', () => {
+            this.hasInteracted = true;
+            if (this.pendingMusic) {
+                this.playMusic(this.pendingMusic);
+                this.pendingMusic = null;
+            }
+        }, { once: true });
+    }
+
+    /** 预加载音频 */
+    async preloadAudio(musicFile) {
+        const cacheKey = musicFile;
+        if (!this.preloadedAudios.has(cacheKey)) {
+            const audio = new Audio(ASSET_PATHS.music + musicFile);
+            audio.loop = true;
+            audio.volume = 0;
+            await audio.play().catch(() => {});
+            this.preloadedAudios.set(cacheKey, audio);
+        }
+    }
+
+    /** 播放音乐 */
+    async playMusic(musicFile) {
+        if (this.currentMusic === musicFile) return;
+
+        if (!this.hasInteracted) {
+            this.pendingMusic = musicFile;
+            return;
+        }
+
+        if (this.audioElement) {
+            this.audioElement.pause();
+            this.audioElement.volume = 0;
+            this.audioElement = null;
+        }
+
+        try {
+            const cacheKey = musicFile;
+            if (this.preloadedAudios.has(cacheKey)) {
+                this.audioElement = this.preloadedAudios.get(cacheKey);
+                this.audioElement.currentTime = 0;
+                this.audioElement.volume = 1;
+            } else {
+                await this.preloadAudio(musicFile);
+                this.audioElement = this.preloadedAudios.get(cacheKey);
+                this.audioElement.volume = 1;
+            }
+            
+            this.currentMusic = musicFile;
+        } catch (error) {
+            console.warn('Failed to play music:', error);
+            if (error.name === 'NotAllowedError') {
+                this.pendingMusic = musicFile;
+            }
+        }
+    }
+
+    /** 停止音乐 */
+    stopMusic() {
+        if (this.audioElement) {
+            this.audioElement.pause();
+            this.audioElement = null;
+        }
+        this.currentMusic = null;
+        this.pendingMusic = null;
+    }
+}
+
 /** 场景管理器 */
 export class SceneManager {
     constructor(game) {
@@ -34,6 +112,134 @@ export class SceneManager {
         } else {
             console.error('Unknown scene type:', scene.type);
         }
+    }
+}
+
+/** UI管理器 */
+export class UIManager {
+    constructor(game) {
+        this.game = game;
+        this.nextSceneButton = null;
+        this.nameText = null;
+        this.dialogText = null;
+    }
+
+    /** 初始化UI */
+    async init() {
+        // 初始化时不创建对话框
+    }
+
+    /** 创建对话框 */
+    createDialogBox() {
+        // 移除已存在的对话框
+        this.removeDialogBox();
+        
+        const dialogY = SCREEN.height - this.game.ui.dialog.height;
+        
+        const dialogBox = new Graphics()
+            .rect(0, dialogY, SCREEN.width, this.game.ui.dialog.height)
+            .fill(this.game.ui.dialog.background);
+        
+        dialogBox.eventMode = 'static';
+        dialogBox.cursor = 'pointer';
+        dialogBox.on('click', () => this.game.contentManager.handleTextClick());
+        
+        this.nameText = new Text({
+            text: '',
+            style: { ...this.game.ui.text.base, ...this.game.ui.text.name }
+        });
+        this.nameText.x = this.game.ui.text.padding;
+        this.nameText.y = dialogY + this.game.ui.text.nameOffsetY;
+        
+        this.dialogText = new Text({
+            text: '',
+            style: this.game.ui.text.base
+        });
+        this.dialogText.x = this.game.ui.text.padding;
+        this.dialogText.y = dialogY + this.game.ui.text.dialogOffsetY;
+
+        this.game.containers.ui.addChild(dialogBox, this.nameText, this.dialogText);
+    }
+
+    /** 移除对话框 */
+    removeDialogBox() {
+        this.game.containers.ui.removeChildren();
+        this.dialogText = null;
+        this.nameText = null;
+    }
+
+    /** 清空所有 UI 状态 */
+    clearAll() {
+        this.clearNextSceneButton();
+        this.removeDialogBox();
+    }
+
+    /** 设置对话文本 */
+    setDialogText(text) {
+        if (this.dialogText) {
+            this.dialogText.text = text;
+        }
+    }
+
+    /** 设置说话人名字 */
+    setNameText(name) {
+        if (this.nameText) {
+            this.nameText.text = name;
+        }
+    }
+
+    /** 清空对话文本 */
+    clearDialogText() {
+        if (this.dialogText) {
+            this.dialogText.text = '';
+        }
+        if (this.nameText) {
+            this.nameText.text = '';
+        }
+    }
+
+    /** 调整画布大小 */
+    resizeGame() {
+        const width = window.innerWidth;
+        const scale = width / SCREEN.width;
+        const height = SCREEN.height * scale;
+        
+        this.game.wrapper.style.width = `${width}px`;
+        this.game.wrapper.style.height = `${height}px`;
+        this.game.app.renderer.resize(width, height);
+
+        Object.values(this.game.containers).forEach(container => {
+            container.scale.set(scale);
+        });
+    }
+
+    /** 清理下一场景按钮 */
+    clearNextSceneButton() {
+        if (this.nextSceneButton && this.nextSceneButton.parentNode) {
+            this.nextSceneButton.parentNode.removeChild(this.nextSceneButton);
+            this.nextSceneButton = null;
+        }
+    }
+
+    /** 显示下一场景按钮 */
+    showNextSceneButton() {
+        this.clearNextSceneButton();
+        const button = document.createElement('button');
+        this.nextSceneButton = button;
+        button.textContent = '继续';
+        Object.assign(button.style, {
+            ...this.game.ui.button.base,
+            ...this.game.ui.button.next
+        });
+
+        button.addEventListener('mouseenter', () => Object.assign(button.style, this.game.ui.button.hover));
+        button.addEventListener('mouseleave', () => Object.assign(button.style, this.game.ui.button.normal));
+        button.addEventListener('click', () => {
+            this.clearNextSceneButton();
+            this.game.sceneManager.switchScene(this.game.gameData[this.game.state.dialog.currentSceneId].nextScene);
+        });
+
+        this.game.wrapper.appendChild(button);
     }
 }
 
@@ -120,223 +326,3 @@ export class ContentManager {
         }
     }
 } 
-
-/** 音乐管理器 */
-export class MusicManager {
-    constructor() {
-        this.currentMusic = null;
-        this.audioElement = null;
-        this.pendingMusic = null;
-        this.hasInteracted = false;
-        this.audioCache = new Map();
-    }
-
-    /** 预加载音频文件 */
-    async preloadMusic(musicFiles) {
-        const loadPromises = [];
-        
-        musicFiles.forEach(musicFile => {
-            if (!this.audioCache.has(musicFile)) {
-                const audio = new Audio(ASSET_PATHS.music + musicFile);
-                audio.loop = true;  // 设置循环播放
-                this.audioCache.set(musicFile, audio);
-                
-                // 预加载音频
-                const loadPromise = new Promise((resolve, reject) => {
-                    audio.addEventListener('canplaythrough', () => resolve(), { once: true });
-                    audio.addEventListener('error', (error) => reject(error), { once: true });
-                    audio.load();
-                }).catch(error => {
-                    console.warn(`Failed to preload music: ${musicFile}`, error);
-                });
-                
-                loadPromises.push(loadPromise);
-            }
-        });
-
-        await Promise.all(loadPromises);
-    }
-
-    /** 设置交互状态 */
-    setInteracted(value = true) {
-        this.hasInteracted = value;
-        if (value && this.pendingMusic) {
-            this.playMusic(this.pendingMusic);
-            this.pendingMusic = null;
-        }
-    }
-
-    /** 播放音乐 */
-    async playMusic(musicFile) {
-        // 如果是相同的音乐，不做任何操作
-        if (this.currentMusic === musicFile) return;
-
-        // 如果还没有交互授权，保存待播放的音乐
-        if (!this.hasInteracted) {
-            this.pendingMusic = musicFile;
-            return;
-        }
-
-        // 停止当前音乐
-        if (this.audioElement) {
-            this.audioElement.pause();
-            this.audioElement.currentTime = 0;
-            this.audioElement = null;
-        }
-
-        try {
-            // 从缓存获取或创建新的音频元素
-            let audio = this.audioCache.get(musicFile);
-            if (!audio) {
-                audio = new Audio(ASSET_PATHS.music + musicFile);
-                audio.loop = true;  // 设置循环播放
-                this.audioCache.set(musicFile, audio);
-            }
-
-            // 重置并播放音频
-            audio.currentTime = 0;
-            this.audioElement = audio;
-            await audio.play();
-            this.currentMusic = musicFile;
-        } catch (error) {
-            console.warn('Failed to play music:', error);
-            // 如果是用户交互问题，保存待播放的音乐
-            if (error.name === 'NotAllowedError') {
-                this.pendingMusic = musicFile;
-                this.hasInteracted = false;
-            }
-        }
-    }
-
-    /** 停止音乐 */
-    stopMusic() {
-        if (this.audioElement) {
-            this.audioElement.pause();
-            this.audioElement.currentTime = 0;
-            this.audioElement = null;
-        }
-        this.currentMusic = null;
-        this.pendingMusic = null;
-    }
-}
-
-/** UI管理器 */
-export class UIManager {
-    constructor(game) {
-        this.game = game;
-        this.nextSceneButton = null;
-        this.nameText = null;
-        this.dialogText = null;
-    }
-
-    /** 清空所有 UI 状态 */
-    clearAll() {
-        this.clearDialogText();
-        this.clearNextSceneButton();
-    }
-
-    /** 设置对话文本 */
-    setDialogText(text) {
-        this.dialogText.text = text;
-    }
-
-    /** 设置说话人名字 */
-    setNameText(name) {
-        this.nameText.text = name;
-    }
-
-    /** 清空对话文本 */
-    clearDialogText() {
-        this.dialogText.text = '';
-        this.nameText.text = '';
-    }
-
-    /** 调整画布大小 */
-    resizeGame() {
-        const width = window.innerWidth;
-        const scale = width / SCREEN.width;
-        const height = SCREEN.height * scale;
-        
-        this.game.wrapper.style.width = `${width}px`;
-        this.game.wrapper.style.height = `${height}px`;
-        this.game.app.renderer.resize(width, height);
-
-        Object.values(this.game.containers).forEach(container => {
-            container.scale.set(scale);
-        });
-    }
-
-    /** 初始化UI */
-    async init() {
-        const dialogY = SCREEN.height - this.game.ui.dialog.height;
-        
-        const dialogBox = new Graphics()
-            .rect(0, dialogY, SCREEN.width, this.game.ui.dialog.height)
-            .fill(this.game.ui.dialog.background);
-        
-        dialogBox.eventMode = 'static';
-        dialogBox.cursor = 'pointer';
-        dialogBox.on('click', () => this.game.contentManager.handleTextClick());
-        
-        this.nameText = new Text({
-            text: '',
-            style: { ...this.game.ui.text.base, ...this.game.ui.text.name }
-        });
-        this.nameText.x = this.game.ui.text.padding;
-        this.nameText.y = dialogY + this.game.ui.text.nameOffsetY;
-        
-        this.dialogText = new Text({
-            text: '',
-            style: this.game.ui.text.base
-        });
-        this.dialogText.x = this.game.ui.text.padding;
-        this.dialogText.y = dialogY + this.game.ui.text.dialogOffsetY;
-
-        this.game.containers.ui.addChild(dialogBox, this.nameText, this.dialogText);
-    }
-
-    /** 创建重新开始按钮 */
-    createRestartButton() {
-        const button = document.createElement('button');
-        button.textContent = '重新开始';
-        Object.assign(button.style, {
-            ...this.game.ui.button.base,
-            ...this.game.ui.button.normal
-        });
-
-        button.addEventListener('mouseenter', () => Object.assign(button.style, this.game.ui.button.hover));
-        button.addEventListener('mouseleave', () => Object.assign(button.style, this.game.ui.button.normal));
-        button.addEventListener('click', () => this.game.restartGame());
-
-        this.game.wrapper.appendChild(button);
-    }
-
-    /** 清理下一场景按钮 */
-    clearNextSceneButton() {
-        if (this.nextSceneButton && this.nextSceneButton.parentNode) {
-            this.nextSceneButton.parentNode.removeChild(this.nextSceneButton);
-            this.nextSceneButton = null;
-        }
-    }
-
-    /** 显示下一场景按钮 */
-    showNextSceneButton() {
-        this.clearNextSceneButton();
-        const button = document.createElement('button');
-        this.nextSceneButton = button;
-        button.textContent = '继续';
-        Object.assign(button.style, {
-            ...this.game.ui.button.base,
-            ...this.game.ui.button.next
-        });
-
-        button.addEventListener('mouseenter', () => Object.assign(button.style, this.game.ui.button.hover));
-        button.addEventListener('mouseleave', () => Object.assign(button.style, this.game.ui.button.normal));
-        button.addEventListener('click', () => {
-            this.clearNextSceneButton();
-            this.game.sceneManager.switchScene(this.game.gameData[this.game.state.dialog.currentSceneId].nextScene);
-        });
-
-        this.game.wrapper.appendChild(button);
-    }
-}

@@ -48,10 +48,12 @@ export const UI = {
             position: 'absolute',
             right: '20px',
             top: '20px',
+            width: '200px',
+            height: '60px',
             padding: '12px 24px',
             fontSize: '16px',
-            color: '#ffffff',
-            backgroundColor: 'rgba(0, 0, 0, 0.6)',
+            color: '#000000',
+            backgroundColor: 'rgba(255, 255, 255, 0.6)',
             border: 'none',
             borderRadius: '6px',
             cursor: 'pointer',
@@ -60,11 +62,13 @@ export const UI = {
             zIndex: '1000'
         },
         hover: {
+            color: '#ffffff',
             backgroundColor: 'rgba(40, 40, 40, 0.8)',
             boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)'
         },
         normal: {
-            backgroundColor: 'rgba(0, 0, 0, 0.6)',
+            color: '#000000',
+            backgroundColor: 'rgba(255, 255, 255, 0.6)',
             boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)'
         },
         next: {

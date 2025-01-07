@@ -23,7 +23,8 @@ export const INITIAL_STATE = {
 export const ASSET_PATHS = {
     background: 'assets/images/bg/',
     character: 'assets/images/character/',
-    music: 'assets/audio/music/'
+    music: 'assets/audio/music/',
+    voice: 'assets/audio/voice/'
 };
 
 /**
@@ -64,4 +65,4 @@ export const CHARACTER_EFFECTS = {
         tint: 0x404040,    // 灰色滤镜
         alpha: 1.0         // 稍微透明
     }
-}; 
+};

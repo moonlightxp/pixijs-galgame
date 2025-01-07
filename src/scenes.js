@@ -43,12 +43,14 @@ export class DialogScene {
         // 收集所有需要加载的资源
         const assets = new Set();
         const characterAssets = new Set();
+        const musicAssets = new Set();
 
         scene.contents.forEach(content => {
             if (content.bg) assets.add(content.bg);
             if (content.character_left) characterAssets.add(content.character_left);
             if (content.character_center) characterAssets.add(content.character_center);
             if (content.character_right) characterAssets.add(content.character_right);
+            if (content.music) musicAssets.add(content.music);
         });
 
         // 加载所有背景
@@ -70,8 +72,11 @@ export class DialogScene {
             }
         });
 
+        // 预加载所有音乐
+        const musicPromise = this.game.musicManager.preloadMusic(Array.from(musicAssets));
+
         // 等待所有资源加载完成
-        await Promise.all([...bgPromises, ...characterPromises]);
+        await Promise.all([...bgPromises, ...characterPromises, musicPromise]);
     }
 
     /** 更新场景显示 */

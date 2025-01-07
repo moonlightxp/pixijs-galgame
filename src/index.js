@@ -58,13 +58,44 @@ class GalGameEngine {
         window.addEventListener('resize', () => this.uiManager.resizeGame());
         await this.uiManager.init();
 
+        // 初始化音频上下文
+        await this.initAudioContext();
+
         // 加载初始场景
-        const initialScene = this.sceneManager.getCurrentScene();
+        const initialScene = this.gameData[Object.keys(this.gameData)[0]];
         if (initialScene) {
             await this.sceneManager.switchScene(initialScene.id);
         }
 
         this.uiManager.createRestartButton();
+    }
+
+    /** 初始化音频上下文 */
+    async initAudioContext() {
+        try {
+            // 创建一个短暂的静音音频
+            const context = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = context.createOscillator();
+            const gainNode = context.createGain();
+            
+            // 设置为静音
+            gainNode.gain.value = 0;
+            oscillator.connect(gainNode);
+            gainNode.connect(context.destination);
+            
+            // 播放 1ms 后立即停止
+            oscillator.start();
+            setTimeout(() => {
+                oscillator.stop();
+                this.musicManager.setInteracted(true);
+            }, 1);
+        } catch (error) {
+            console.warn('Auto-play may be blocked:', error);
+            // 降级为用户交互触发
+            document.addEventListener('click', () => {
+                this.musicManager.setInteracted(true);
+            }, { once: true });
+        }
     }
 
     /** 重新开始游戏 */

@@ -3,103 +3,6 @@ import { SCREEN } from './styles.js';
 import { ASSET_PATHS } from './config.js';
 import { DialogScene, SelectScene, StartScene } from './scenes.js';
 
-/** 音乐管理器 */
-export class MusicManager {
-    constructor() {
-        this.currentMusic = null;
-        this.audioElement = null;
-        this.pendingMusic = null;
-        this.hasInteracted = false;
-        this.context = null;
-        
-        // 创建一个静音的AudioContext来预先获取授权
-        this.initAudioContext();
-    }
-
-    /** 初始化音频上下文 */
-    async initAudioContext() {
-        try {
-            // 创建一个短暂的静音音频
-            this.context = new (window.AudioContext || window.webkitAudioContext)();
-            const oscillator = this.context.createOscillator();
-            const gainNode = this.context.createGain();
-            
-            // 设置为静音
-            gainNode.gain.value = 0;
-            oscillator.connect(gainNode);
-            gainNode.connect(this.context.destination);
-            
-            // 播放 1ms 后立即停止
-            oscillator.start();
-            setTimeout(() => {
-                oscillator.stop();
-                this.hasInteracted = true;
-            }, 1);
-            
-            // 如果有待播放的音乐，立即播放
-            if (this.pendingMusic) {
-                await this.playMusic(this.pendingMusic);
-                this.pendingMusic = null;
-            }
-        } catch (error) {
-            console.warn('Auto-play may be blocked:', error);
-            // 降级为用户交互触发
-            document.addEventListener('click', () => {
-                if (!this.hasInteracted) {
-                    this.hasInteracted = true;
-                    if (this.pendingMusic) {
-                        this.playMusic(this.pendingMusic);
-                        this.pendingMusic = null;
-                    }
-                }
-            }, { once: true });
-        }
-    }
-
-    /** 播放音乐 */
-    async playMusic(musicFile) {
-        // 如果是相同的音乐，不做任何操作
-        if (this.currentMusic === musicFile) return;
-
-        // 如果还没有交互授权，保存待播放的音乐
-        if (!this.hasInteracted) {
-            this.pendingMusic = musicFile;
-            return;
-        }
-
-        // 停止当前音乐
-        if (this.audioElement) {
-            this.audioElement.pause();
-            this.audioElement = null;
-        }
-
-        try {
-            // 播放新音乐
-            this.audioElement = new Audio(ASSET_PATHS.music + musicFile);
-            this.audioElement.loop = true;
-            await this.audioElement.play();
-            this.currentMusic = musicFile;
-        } catch (error) {
-            console.warn('Failed to play music:', error);
-            // 如果是用户交互问题，保存待播放的音乐
-            if (error.name === 'NotAllowedError') {
-                this.pendingMusic = musicFile;
-                this.hasInteracted = false;
-            }
-        }
-    }
-
-    /** 停止音乐 */
-    stopMusic() {
-        if (this.audioElement) {
-            this.audioElement.pause();
-            this.audioElement = null;
-        }
-        this.currentMusic = null;
-        this.pendingMusic = null;
-    }
-}
-
 /** 场景管理器 */
 export class SceneManager {
     constructor(game) {
@@ -131,6 +34,189 @@ export class SceneManager {
         } else {
             console.error('Unknown scene type:', scene.type);
         }
+    }
+}
+
+/** 内容管理器 */
+export class ContentManager {
+    constructor(game) {
+        this.game = game;
+        this.currentDialogId = 0;
+        this.isShowingDialog = false;
+    }
+
+    /** 检查是否有下一条内容 */
+    hasNextContent(scene) {
+        return this.game.state.dialog.currentDialogIndex < scene.contents.length - 1;
+    }
+
+    /** 获取当前内容 */
+    getCurrentContent(scene) {
+        return scene.contents[this.game.state.dialog.currentDialogIndex];
+    }
+
+    /** 显示对话文本 */
+    async showText(text, name = '') {
+        const dialogId = ++this.currentDialogId;
+
+        if (this.isShowingDialog) {
+            this.isShowingDialog = false;
+            await new Promise(resolve => setTimeout(resolve, 50));
+        }
+
+        if (dialogId !== this.currentDialogId) return;
+
+        this.isShowingDialog = true;
+        this.game.uiManager.setNameText(name);
+        this.game.uiManager.setDialogText('');
+
+        for (let i = 0; i < text.length && dialogId === this.currentDialogId && this.isShowingDialog; i++) {
+            this.game.uiManager.setDialogText(text.substring(0, i + 1));
+            await new Promise(resolve => setTimeout(resolve, this.game.state.dialog.speed));
+        }
+
+        if (dialogId === this.currentDialogId && this.isShowingDialog) {
+            this.game.uiManager.setDialogText(text);
+        }
+        
+        this.isShowingDialog = false;
+    }
+
+    /** 处理内容点击 */
+    handleTextClick() {
+        const currentScene = this.game.sceneManager.getCurrentScene();
+        if (!currentScene) return;
+
+        if (this.isShowingDialog) {
+            this.isShowingDialog = false;
+            const content = this.getCurrentContent(currentScene);
+            this.game.uiManager.setDialogText(content.text);
+        } else {
+            this.showNextContent();
+        }
+    }
+
+    /** 显示下一条内容 */
+    async showNextContent() {
+        const currentScene = this.game.sceneManager.getCurrentScene();
+        if (!currentScene || currentScene.type !== 'dialog') return;
+
+        if (this.hasNextContent(currentScene)) {
+            this.game.state.dialog.currentDialogIndex++;
+            const content = this.getCurrentContent(currentScene);
+
+            // 播放音乐
+            if (content.music) {
+                this.game.musicManager.playMusic(content.music);
+            }
+
+            const handler = this.game.sceneManager.sceneHandlers[currentScene.type];
+            if (handler) {
+                await handler.updateSceneDisplay(currentScene, this.game.state.dialog.currentDialogIndex);
+                await this.showText(content.text, content.name);
+            }
+        } else if (currentScene.nextScene) {
+            this.game.uiManager.showNextSceneButton();
+        }
+    }
+} 
+
+/** 音乐管理器 */
+export class MusicManager {
+    constructor() {
+        this.currentMusic = null;
+        this.audioElement = null;
+        this.pendingMusic = null;
+        this.hasInteracted = false;
+        this.audioCache = new Map();
+    }
+
+    /** 预加载音频文件 */
+    async preloadMusic(musicFiles) {
+        const loadPromises = [];
+        
+        musicFiles.forEach(musicFile => {
+            if (!this.audioCache.has(musicFile)) {
+                const audio = new Audio(ASSET_PATHS.music + musicFile);
+                audio.loop = true;  // 设置循环播放
+                this.audioCache.set(musicFile, audio);
+                
+                // 预加载音频
+                const loadPromise = new Promise((resolve, reject) => {
+                    audio.addEventListener('canplaythrough', () => resolve(), { once: true });
+                    audio.addEventListener('error', (error) => reject(error), { once: true });
+                    audio.load();
+                }).catch(error => {
+                    console.warn(`Failed to preload music: ${musicFile}`, error);
+                });
+                
+                loadPromises.push(loadPromise);
+            }
+        });
+
+        await Promise.all(loadPromises);
+    }
+
+    /** 设置交互状态 */
+    setInteracted(value = true) {
+        this.hasInteracted = value;
+        if (value && this.pendingMusic) {
+            this.playMusic(this.pendingMusic);
+            this.pendingMusic = null;
+        }
+    }
+
+    /** 播放音乐 */
+    async playMusic(musicFile) {
+        // 如果是相同的音乐，不做任何操作
+        if (this.currentMusic === musicFile) return;
+
+        // 如果还没有交互授权，保存待播放的音乐
+        if (!this.hasInteracted) {
+            this.pendingMusic = musicFile;
+            return;
+        }
+
+        // 停止当前音乐
+        if (this.audioElement) {
+            this.audioElement.pause();
+            this.audioElement.currentTime = 0;
+            this.audioElement = null;
+        }
+
+        try {
+            // 从缓存获取或创建新的音频元素
+            let audio = this.audioCache.get(musicFile);
+            if (!audio) {
+                audio = new Audio(ASSET_PATHS.music + musicFile);
+                audio.loop = true;  // 设置循环播放
+                this.audioCache.set(musicFile, audio);
+            }
+
+            // 重置并播放音频
+            audio.currentTime = 0;
+            this.audioElement = audio;
+            await audio.play();
+            this.currentMusic = musicFile;
+        } catch (error) {
+            console.warn('Failed to play music:', error);
+            // 如果是用户交互问题，保存待播放的音乐
+            if (error.name === 'NotAllowedError') {
+                this.pendingMusic = musicFile;
+                this.hasInteracted = false;
+            }
+        }
+    }
+
+    /** 停止音乐 */
+    stopMusic() {
+        if (this.audioElement) {
+            this.audioElement.pause();
+            this.audioElement.currentTime = 0;
+            this.audioElement = null;
+        }
+        this.currentMusic = null;
+        this.pendingMusic = null;
     }
 }
 
@@ -254,87 +340,3 @@ export class UIManager {
         this.game.wrapper.appendChild(button);
     }
 }
-
-/** 内容管理器 */
-export class ContentManager {
-    constructor(game) {
-        this.game = game;
-        this.currentDialogId = 0;
-        this.isShowingDialog = false;
-    }
-
-    /** 检查是否有下一条内容 */
-    hasNextContent(scene) {
-        return this.game.state.dialog.currentDialogIndex < scene.contents.length - 1;
-    }
-
-    /** 获取当前内容 */
-    getCurrentContent(scene) {
-        return scene.contents[this.game.state.dialog.currentDialogIndex];
-    }
-
-    /** 显示对话文本 */
-    async showText(text, name = '') {
-        const dialogId = ++this.currentDialogId;
-
-        if (this.isShowingDialog) {
-            this.isShowingDialog = false;
-            await new Promise(resolve => setTimeout(resolve, 50));
-        }
-
-        if (dialogId !== this.currentDialogId) return;
-
-        this.isShowingDialog = true;
-        this.game.uiManager.setNameText(name);
-        this.game.uiManager.setDialogText('');
-
-        for (let i = 0; i < text.length && dialogId === this.currentDialogId && this.isShowingDialog; i++) {
-            this.game.uiManager.setDialogText(text.substring(0, i + 1));
-            await new Promise(resolve => setTimeout(resolve, this.game.state.dialog.speed));
-        }
-
-        if (dialogId === this.currentDialogId && this.isShowingDialog) {
-            this.game.uiManager.setDialogText(text);
-        }
-        
-        this.isShowingDialog = false;
-    }
-
-    /** 处理内容点击 */
-    handleTextClick() {
-        const currentScene = this.game.sceneManager.getCurrentScene();
-        if (!currentScene) return;
-
-        if (this.isShowingDialog) {
-            this.isShowingDialog = false;
-            const content = this.getCurrentContent(currentScene);
-            this.game.uiManager.setDialogText(content.text);
-        } else {
-            this.showNextContent();
-        }
-    }
-
-    /** 显示下一条内容 */
-    async showNextContent() {
-        const currentScene = this.game.sceneManager.getCurrentScene();
-        if (!currentScene || currentScene.type !== 'dialog') return;
-
-        if (this.hasNextContent(currentScene)) {
-            this.game.state.dialog.currentDialogIndex++;
-            const content = this.getCurrentContent(currentScene);
-
-            // 播放音乐
-            if (content.music) {
-                this.game.musicManager.playMusic(content.music);
-            }
-
-            const handler = this.game.sceneManager.sceneHandlers[currentScene.type];
-            if (handler) {
-                await handler.updateSceneDisplay(currentScene, this.game.state.dialog.currentDialogIndex);
-                await this.showText(content.text, content.name);
-            }
-        } else if (currentScene.nextScene) {
-            this.game.uiManager.showNextSceneButton();
-        }
-    }
-} 

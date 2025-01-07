@@ -39,7 +39,7 @@ export const GAME_DATA = {
                 name: '中:',
                 text: '这是一段较长的对话，用来测试文本换行和打字机效果。我们需要确保文本显示正常，不会出现排版问题。',
 
-                music: 'music_scene02.mp3'
+                music: 'music_scene01.mp3'
             },
 
             {
@@ -54,7 +54,7 @@ export const GAME_DATA = {
                 name: '右:',
                 text: '对话结束,测试通过。',
 
-                music: 'music_scene03.mp3'
+                music: 'music_scene01.mp3'
             }
         ]
     },

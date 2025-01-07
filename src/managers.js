@@ -10,15 +10,50 @@ export class MusicManager {
         this.audioElement = null;
         this.pendingMusic = null;
         this.hasInteracted = false;
+        this.context = null;
+        
+        // 创建一个静音的AudioContext来预先获取授权
+        this.initAudioContext();
+    }
 
-        // 监听用户交互
-        document.addEventListener('click', () => {
-            this.hasInteracted = true;
+    /** 初始化音频上下文 */
+    async initAudioContext() {
+        try {
+            // 创建一个短暂的静音音频
+            this.context = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = this.context.createOscillator();
+            const gainNode = this.context.createGain();
+            
+            // 设置为静音
+            gainNode.gain.value = 0;
+            oscillator.connect(gainNode);
+            gainNode.connect(this.context.destination);
+            
+            // 播放 1ms 后立即停止
+            oscillator.start();
+            setTimeout(() => {
+                oscillator.stop();
+                this.hasInteracted = true;
+            }, 1);
+            
+            // 如果有待播放的音乐，立即播放
             if (this.pendingMusic) {
-                this.playMusic(this.pendingMusic);
+                await this.playMusic(this.pendingMusic);
                 this.pendingMusic = null;
             }
-        }, { once: true });
+        } catch (error) {
+            console.warn('Auto-play may be blocked:', error);
+            // 降级为用户交互触发
+            document.addEventListener('click', () => {
+                if (!this.hasInteracted) {
+                    this.hasInteracted = true;
+                    if (this.pendingMusic) {
+                        this.playMusic(this.pendingMusic);
+                        this.pendingMusic = null;
+                    }
+                }
+            }, { once: true });
+        }
     }
 
     /** 播放音乐 */
@@ -26,7 +61,7 @@ export class MusicManager {
         // 如果是相同的音乐，不做任何操作
         if (this.currentMusic === musicFile) return;
 
-        // 如果用户还没有交互，保存待播放的音乐
+        // 如果还没有交互授权，保存待播放的音乐
         if (!this.hasInteracted) {
             this.pendingMusic = musicFile;
             return;
@@ -49,6 +84,7 @@ export class MusicManager {
             // 如果是用户交互问题，保存待播放的音乐
             if (error.name === 'NotAllowedError') {
                 this.pendingMusic = musicFile;
+                this.hasInteracted = false;
             }
         }
     }

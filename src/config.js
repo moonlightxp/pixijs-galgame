@@ -10,7 +10,9 @@ export const INITIAL_STATE = {
     },
     assets: {
         currentBg: null, // 当前背景
-        currentCharacter: null // 当前角色
+        currentCharacterLeft: null,   // 当前左侧角色
+        currentCharacterCenter: null, // 当前中间角色
+        currentCharacterRight: null   // 当前右侧角色
     }
 };
 
@@ -37,4 +39,13 @@ export const CONTAINERS = {
 export const APP_CONFIG = {
     backgroundColor: 0x000000,
     resolution: 1
+};
+
+/**
+ * 角色位置配置
+ */
+export const CHARACTER_POSITIONS = {
+    left: 'left',
+    center: 'center',
+    right: 'right'
 }; 

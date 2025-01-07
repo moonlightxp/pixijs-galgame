@@ -1,3 +1,4 @@
+import * as PIXI from 'pixi.js';
 import { Assets, Sprite } from 'pixi.js';
 import { SCREEN } from './styles.js';
 import { ASSET_PATHS } from './config.js';
@@ -24,7 +25,9 @@ export class NormalScene {
 
         scene.contents.forEach(content => {
             if (content.bg) assets.add(content.bg);
-            if (content.character) characterAssets.add(content.character);
+            if (content.character_left) characterAssets.add(content.character_left);
+            if (content.character_center) characterAssets.add(content.character_center);
+            if (content.character_right) characterAssets.add(content.character_right);
         });
 
         // 加载所有背景
@@ -39,7 +42,7 @@ export class NormalScene {
 
         // 加载所有角色
         const characterPromises = Array.from(characterAssets).map(async char => {
-            if (!this.game.assetCache.characters.has(char)) {
+            if (char && !this.game.assetCache.characters.has(char)) {
                 const sprite = Sprite.from(await Assets.load(ASSET_PATHS.character + char));
                 sprite.anchor.set(0.5);
                 this.game.assetCache.characters.set(char, sprite);
@@ -66,20 +69,97 @@ export class NormalScene {
             this.game.state.assets.currentBg = content.bg;
         }
 
-        // 更新角色
-        if (!content.character) {
-            this.game.containers.character.removeChildren();
-            this.game.state.assets.currentCharacter = null;
-        } else {
-            const character = this.game.assetCache.characters.get(content.character);
-            const isNewCharacter = content.character !== this.game.state.assets.currentCharacter;
-
-            if (isNewCharacter) {
-                this.setCharacterPosition(character, content.position);
+        // 更新左侧角色
+        if (content.character_left !== this.game.state.assets.currentCharacterLeft) {
+            if (content.character_left) {
+                let character;
+                const cacheKey = `left_${content.character_left}`;
+                if (this.game.assetCache.characters.has(cacheKey)) {
+                    character = this.game.assetCache.characters.get(cacheKey);
+                } else {
+                    const baseCharacter = this.game.assetCache.characters.get(content.character_left);
+                    character = new Sprite(baseCharacter.texture);
+                    this.game.assetCache.characters.set(cacheKey, character);
+                }
+                this.setCharacterPosition(character, 'left');
+                character.characterPosition = 'left';
+                
+                // 保存其他位置的角色
+                const centerChar = this.game.containers.character.children.find(c => c.characterPosition === 'center');
+                const rightChar = this.game.containers.character.children.find(c => c.characterPosition === 'right');
                 this.game.containers.character.removeChildren();
+                
                 this.game.containers.character.addChild(character);
-                this.game.state.assets.currentCharacter = content.character;
+                if (centerChar) this.game.containers.character.addChild(centerChar);
+                if (rightChar) this.game.containers.character.addChild(rightChar);
+            } else {
+                const others = this.game.containers.character.children.filter(c => c.characterPosition !== 'left');
+                this.game.containers.character.removeChildren();
+                others.forEach(char => this.game.containers.character.addChild(char));
             }
+            this.game.state.assets.currentCharacterLeft = content.character_left;
+        }
+
+        // 更新中间角色
+        if (content.character_center !== this.game.state.assets.currentCharacterCenter) {
+            if (content.character_center) {
+                let character;
+                const cacheKey = `center_${content.character_center}`;
+                if (this.game.assetCache.characters.has(cacheKey)) {
+                    character = this.game.assetCache.characters.get(cacheKey);
+                } else {
+                    const baseCharacter = this.game.assetCache.characters.get(content.character_center);
+                    character = new Sprite(baseCharacter.texture);
+                    this.game.assetCache.characters.set(cacheKey, character);
+                }
+                this.setCharacterPosition(character, 'center');
+                character.characterPosition = 'center';
+                
+                // 保存其他位置的角色
+                const leftChar = this.game.containers.character.children.find(c => c.characterPosition === 'left');
+                const rightChar = this.game.containers.character.children.find(c => c.characterPosition === 'right');
+                this.game.containers.character.removeChildren();
+                
+                if (leftChar) this.game.containers.character.addChild(leftChar);
+                this.game.containers.character.addChild(character);
+                if (rightChar) this.game.containers.character.addChild(rightChar);
+            } else {
+                const others = this.game.containers.character.children.filter(c => c.characterPosition !== 'center');
+                this.game.containers.character.removeChildren();
+                others.forEach(char => this.game.containers.character.addChild(char));
+            }
+            this.game.state.assets.currentCharacterCenter = content.character_center;
+        }
+
+        // 更新右侧角色
+        if (content.character_right !== this.game.state.assets.currentCharacterRight) {
+            if (content.character_right) {
+                let character;
+                const cacheKey = `right_${content.character_right}`;
+                if (this.game.assetCache.characters.has(cacheKey)) {
+                    character = this.game.assetCache.characters.get(cacheKey);
+                } else {
+                    const baseCharacter = this.game.assetCache.characters.get(content.character_right);
+                    character = new Sprite(baseCharacter.texture);
+                    this.game.assetCache.characters.set(cacheKey, character);
+                }
+                this.setCharacterPosition(character, 'right');
+                character.characterPosition = 'right';
+                
+                // 保存其他位置的角色
+                const leftChar = this.game.containers.character.children.find(c => c.characterPosition === 'left');
+                const centerChar = this.game.containers.character.children.find(c => c.characterPosition === 'center');
+                this.game.containers.character.removeChildren();
+                
+                if (leftChar) this.game.containers.character.addChild(leftChar);
+                if (centerChar) this.game.containers.character.addChild(centerChar);
+                this.game.containers.character.addChild(character);
+            } else {
+                const others = this.game.containers.character.children.filter(c => c.characterPosition !== 'right');
+                this.game.containers.character.removeChildren();
+                others.forEach(char => this.game.containers.character.addChild(char));
+            }
+            this.game.state.assets.currentCharacterRight = content.character_right;
         }
     }
 

@@ -13,36 +13,41 @@ export const GAME_DATA = {
         contents: [
             {
                 bg: 'bg_001.png',
-                character: 'c_001.png',
-                position: 'center',
+                character_left: 'c_001.png',
+                character_center: 'c_002.png',
+                character_right: '',
                 text: '欢迎来到测试场景...',
                 name: '测试角色 1'
             },
             {
                 bg: 'bg_002.png',
-                character: 'c_002.png',
-                position: 'left',
+                character_left: 'c_002.png',
+                character_center: '',
+                character_right: '',
                 text: '这是一段较长的对话，用来测试文本换行和打字机效果。我们需要确保文本显示正常，不会出现排版问题。',
                 name: '测试角色 2'
             },
             {
                 bg: 'bg_003.png',
-                character: 'c_003.png',
-                position: 'right',
+                character_left: 'c_004.png',
+                character_center: '',
+                character_right: 'c_003.png',
                 text: '现在我们来测试不同的立绘位置，这句话的立绘在右边。',
                 name: '测试角色 3'
             },
             {
                 bg: 'bg_001.png',
-                character: 'c_004.png',
-                position: 'center',
+                character_left: '',
+                character_center: 'c_004.png',
+                character_right: '',
                 text: '接下来测试立绘和背景的切换效果，注意观察过渡是否流畅。',
                 name: '测试角色 4'
             },
             {
                 bg: 'bg_002.png',
-                character: 'c_005.png',
-                position: 'left',
+                character_left: 'c_005.png',
+                character_center: 'c_005.png',
+                character_right: 'c_005.png',
                 text: '测试场景到此结束，感谢您的耐心体验。',
                 name: '测试角色 5'
             }
@@ -51,7 +56,7 @@ export const GAME_DATA = {
     scene_2: {
         id: 'scene_2',
         type: 'select',
-        nextScene: 'scene_1',
+        nextScene: '',
         contents: [
 
         ]

@@ -2,6 +2,7 @@ import { Assets, Sprite, Text, Graphics, Container } from 'pixi.js';
 import { SCREEN } from './styles.js';
 import { ASSET_PATHS, CHARACTER_EFFECTS } from './config.js';
 import { DialogScene, SelectScene, StartScene } from './scenes.js';
+import { GAME_DATA } from './gameData.js';
 
 /** 资源管理器 */
 export class AssetManager {
@@ -12,6 +13,119 @@ export class AssetManager {
             characters: new Map(),
             audios: new Map()
         };
+        this.loadingProgress = 0;
+        this.totalAssets = 0;
+        this.loadedAssets = 0;
+    }
+
+    /** 获取所有需要预加载的资源路径 */
+    getAllAssetPaths() {
+        const assets = {
+            backgrounds: new Set(),
+            characters: new Set(),
+            music: new Set(),
+            voice: new Set()
+        };
+
+        // 遍历所有场景数据
+        Object.values(GAME_DATA).forEach(scene => {
+            // 收集背景和音乐
+            if (scene.background) assets.backgrounds.add(scene.background);
+            if (scene.music) assets.music.add(scene.music);
+
+            // 对话场景特殊处理
+            if (scene.type === 'dialog' && scene.contents) {
+                scene.contents.forEach(content => {
+                    if (content.bg) assets.backgrounds.add(content.bg);
+                    if (content.music) assets.music.add(content.music);
+                    if (content.voice) assets.voice.add(content.voice);
+                    if (content.character_left) assets.characters.add(content.character_left);
+                    if (content.character_center) assets.characters.add(content.character_center);
+                    if (content.character_right) assets.characters.add(content.character_right);
+                });
+            }
+
+            // 选择场景特殊处理
+            if (scene.type === 'select' && scene.locations) {
+                scene.locations.forEach(location => {
+                    if (location.bg) assets.backgrounds.add(location.bg);
+                    if (location.music) assets.music.add(location.music);
+                    if (location.characters) {
+                        location.characters.forEach(char => {
+                            if (char.image) assets.characters.add(char.image);
+                            if (char.voice) assets.voice.add(char.voice);
+                        });
+                    }
+                });
+            }
+        });
+
+        return assets;
+    }
+
+    /** 更新加载进度 */
+    updateProgress() {
+        this.loadedAssets++;
+        this.loadingProgress = (this.loadedAssets / this.totalAssets) * 100;
+        // 通知游戏更新加载进度显示
+        if (this.game.uiManager) {
+            this.game.uiManager.updateLoadingProgress(this.loadingProgress);
+        }
+    }
+
+    /** 预加载所有资源 */
+    async preloadAllAssets() {
+        const assets = this.getAllAssetPaths();
+        
+        // 计算总资源数
+        this.totalAssets = assets.backgrounds.size + 
+                          assets.characters.size + 
+                          assets.music.size + 
+                          assets.voice.size;
+        this.loadedAssets = 0;
+        this.loadingProgress = 0;
+
+        // 预加载所有资源
+        const loadPromises = [];
+
+        // 加载背景
+        for (const bg of assets.backgrounds) {
+            loadPromises.push(
+                this.loadBackground(bg)
+                    .then(() => this.updateProgress())
+                    .catch(err => console.error('Failed to load background:', bg, err))
+            );
+        }
+
+        // 加载角色
+        for (const char of assets.characters) {
+            loadPromises.push(
+                this.loadCharacter(char)
+                    .then(() => this.updateProgress())
+                    .catch(err => console.error('Failed to load character:', char, err))
+            );
+        }
+
+        // 加载音乐
+        for (const music of assets.music) {
+            loadPromises.push(
+                this.loadAudio(music, 'music')
+                    .then(() => this.updateProgress())
+                    .catch(err => console.error('Failed to load music:', music, err))
+            );
+        }
+
+        // 加载语音
+        for (const voice of assets.voice) {
+            loadPromises.push(
+                this.loadAudio(voice, 'voice')
+                    .then(() => this.updateProgress())
+                    .catch(err => console.error('Failed to load voice:', voice, err))
+            );
+        }
+
+        // 等待所有资源加载完成
+        await Promise.all(loadPromises);
     }
 
     /** 加载背景图片 */
@@ -271,14 +385,89 @@ export class SceneManager {
 export class UIManager {
     constructor(game) {
         this.game = game;
-        this.elements = {
-            dialog: {
-                container: null,
-                nameText: null,
-                contentText: null
-            },
-            button: null  // 统一使用一个按钮引用
-        };
+        this.dialogBox = null;
+        this.nameText = null;
+        this.dialogText = null;
+        this.continueButton = null;
+        this.loadingScreen = null;
+        this.loadingText = null;
+        this.loadingBar = null;
+    }
+
+    /** 创建加载界面 */
+    createLoadingScreen() {
+        // 创建加载界面容器
+        this.loadingScreen = document.createElement('div');
+        Object.assign(this.loadingScreen.style, {
+            position: 'fixed',
+            top: '0',
+            left: '0',
+            width: '100%',
+            height: '100%',
+            backgroundColor: 'black',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: '9999'
+        });
+
+        // 创建加载进度条容器
+        const progressContainer = document.createElement('div');
+        Object.assign(progressContainer.style, {
+            width: '60%',
+            height: '20px',
+            backgroundColor: '#333',
+            borderRadius: '10px',
+            overflow: 'hidden',
+            margin: '20px'
+        });
+
+        // 创建加载进度条
+        this.loadingBar = document.createElement('div');
+        Object.assign(this.loadingBar.style, {
+            width: '0%',
+            height: '100%',
+            backgroundColor: '#4CAF50',
+            transition: 'width 0.3s ease'
+        });
+        progressContainer.appendChild(this.loadingBar);
+
+        // 创建加载文本
+        this.loadingText = document.createElement('div');
+        Object.assign(this.loadingText.style, {
+            color: 'white',
+            fontSize: '18px',
+            marginTop: '10px',
+            fontFamily: 'Arial, sans-serif'
+        });
+        this.loadingText.textContent = '资源加载中... 0%';
+
+        // 组装加载界面
+        this.loadingScreen.appendChild(progressContainer);
+        this.loadingScreen.appendChild(this.loadingText);
+        this.game.wrapper.appendChild(this.loadingScreen);
+    }
+
+    /** 更新加载进度 */
+    updateLoadingProgress(progress) {
+        if (!this.loadingScreen) return;
+        
+        const percentage = Math.min(100, Math.max(0, progress));
+        this.loadingBar.style.width = `${percentage}%`;
+        this.loadingText.textContent = `资源加载中... ${Math.round(percentage)}%`;
+
+        // 如果加载完成，移除加载界面
+        if (percentage >= 100) {
+            setTimeout(() => {
+                if (this.loadingScreen && this.loadingScreen.parentNode) {
+                    this.loadingScreen.parentNode.removeChild(this.loadingScreen);
+                }
+                this.loadingScreen = null;
+                this.loadingBar = null;
+                this.loadingText = null;
+            }, 500);
+        }
     }
 
     /** 创建UI元素 */
@@ -375,50 +564,41 @@ export class UIManager {
         const dialogY = SCREEN.height - this.game.ui.dialog.height;
         
         // 创建对话框容器
-        const dialogBox = this.createUIElement('dialog', { y: dialogY });
-        dialogBox.eventMode = 'static';
-        dialogBox.cursor = 'pointer';
-        this.addEventListeners(dialogBox, {
+        this.dialogBox = this.createUIElement('dialog', { y: dialogY });
+        this.dialogBox.eventMode = 'static';
+        this.dialogBox.cursor = 'pointer';
+        this.addEventListeners(this.dialogBox, {
             click: () => this.game.contentManager.handleTextClick()
         });
         
         // 创建名字文本
-        const nameText = this.createUIElement('text', {
+        this.nameText = this.createUIElement('text', {
             style: this.game.ui.text.name
         });
-        nameText.eventMode = 'none'; // 禁用交互，允许点击穿透
-        this.setElementPosition(nameText, {
+        this.nameText.eventMode = 'none'; // 禁用交互，允许点击穿透
+        this.setElementPosition(this.nameText, {
             x: this.game.ui.text.padding,
             y: dialogY + this.game.ui.text.nameOffsetY
         });
         
         // 创建对话文本
-        const dialogText = this.createUIElement('text', {});
-        dialogText.eventMode = 'none'; // 禁用交互，允许点击穿透
-        this.setElementPosition(dialogText, {
+        this.dialogText = this.createUIElement('text', {});
+        this.dialogText.eventMode = 'none'; // 禁用交互，允许点击穿透
+        this.setElementPosition(this.dialogText, {
             x: this.game.ui.text.padding,
             y: dialogY + this.game.ui.text.dialogOffsetY
         });
 
-        // 保存元素引用
-        this.elements.dialog = {
-            container: dialogBox,
-            nameText: nameText,
-            contentText: dialogText
-        };
-
         // 添加到舞台
-        this.game.containers.ui.addChild(dialogBox, nameText, dialogText);
+        this.game.containers.ui.addChild(this.dialogBox, this.nameText, this.dialogText);
     }
 
     /** 移除对话框 */
     removeDialogBox() {
         this.game.containers.ui.removeChildren();
-        this.elements.dialog = {
-            container: null,
-            nameText: null,
-            contentText: null
-        };
+        this.dialogBox = null;
+        this.nameText = null;
+        this.dialogText = null;
     }
 
     /** 清空所有 UI 状态 */
@@ -436,29 +616,19 @@ export class UIManager {
                 element.parentNode.removeChild(element);
             }
         });
-        
-        // 重置所有元素引用
-        this.elements = {
-            dialog: {
-                container: null,
-                nameText: null,
-                contentText: null
-            },
-            button: null
-        };
     }
 
     /** 设置对话文本 */
     setDialogText(text) {
-        if (this.elements.dialog.contentText) {
-            this.elements.dialog.contentText.text = text || '';
+        if (this.dialogText) {
+            this.dialogText.text = text || '';
         }
     }
 
     /** 设置说话人名字 */
     setNameText(name) {
-        if (this.elements.dialog.nameText) {
-            this.elements.dialog.nameText.text = name || '';
+        if (this.nameText) {
+            this.nameText.text = name || '';
         }
     }
 
@@ -495,11 +665,10 @@ export class UIManager {
 
     /** 清理按钮 */
     clearButton() {
-        const button = this.elements.button;
-        if (button && button.parentNode) {
-            button.parentNode.removeChild(button);
+        if (this.continueButton && this.continueButton.parentNode) {
+            this.continueButton.parentNode.removeChild(this.continueButton);
         }
-        this.elements.button = null;
+        this.continueButton = null;
     }
 
     /** 创建继续按钮 */
@@ -593,7 +762,7 @@ export class UIManager {
         } else {
             // 其他场景直接添加到 wrapper
             this.game.wrapper.appendChild(button);
-            this.elements.button = button;
+            this.continueButton = button;
         }
     }
 
@@ -643,7 +812,7 @@ export class UIManager {
             );
         });
 
-        this.elements.button = button;
+        this.continueButton = button;
         this.game.wrapper.appendChild(button);
     }
 

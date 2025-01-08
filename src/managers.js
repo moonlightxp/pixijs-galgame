@@ -474,12 +474,30 @@ export class UIManager {
         const scale = width / SCREEN.width;
         const height = SCREEN.height * scale;
         
+        // 调整容器大小
         this.game.wrapper.style.width = `${width}px`;
         this.game.wrapper.style.height = `${height}px`;
+        
+        // 调整渲染器大小
         this.game.app.renderer.resize(width, height);
 
-        Object.values(this.game.containers).forEach(container => {
-            container.scale.set(scale);
+        // 调整所有容器的缩放
+        const containers = {
+            background: this.game.containers.background,
+            character: this.game.containers.character,
+            ui: this.game.containers.ui
+        };
+
+        // 设置每个容器的缩放和位置
+        Object.values(containers).forEach(container => {
+            if (container) {
+                container.scale.set(scale);
+                // 保持容器的相对位置
+                container.position.set(
+                    (width - SCREEN.width * scale) / 2,
+                    (height - SCREEN.height * scale) / 2
+                );
+            }
         });
     }
 

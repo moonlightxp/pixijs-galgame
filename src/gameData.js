@@ -94,7 +94,7 @@ export const GAME_DATA = {
                 bg: 'bg_01.png',
 
                 character_left: 'c_001.png',
-                character_center: 'c_003.png',
+                character_center: '',
                 character_right: 'c_002.png',
 
 
@@ -111,7 +111,7 @@ export const GAME_DATA = {
                 bg: 'bg_01.png',
 
                 character_left: 'c_001.png',
-                character_center: 'c_003.png',
+                character_center: '',
                 character_right: 'c_002.png',
 
 

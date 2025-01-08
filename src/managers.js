@@ -688,17 +688,17 @@ export class UIManager {
 
         // 根据场景类型应用样式
         if (currentScene.type === 'select') {
-            // 小按钮样式（与选择场景其他按钮对齐）
+            // 选择场景的继续按钮样式
             Object.assign(button.style, {
                 ...baseStyle,
-                width: '120px',
-                height: '25px',
-                padding: '3px 8px',
-                fontSize: '12px',
-                borderRadius: '3px'
+                width: '240px',
+                height: '50px',
+                padding: '6px 16px',
+                fontSize: '24px',
+                borderRadius: '6px'
             });
         } else {
-            // 大按钮样式（start和dialog场景）
+            // 其他场景的按钮样式保持不变
             Object.assign(button.style, {
                 ...baseStyle,
                 width: '200px',
@@ -823,11 +823,11 @@ export class UIManager {
         Object.assign(button.style, {
             ...this.game.ui.button.base,
             ...this.game.ui.button.normal,
-            width: '120px',
-            height: '25px',
-            padding: '3px 8px',
-            fontSize: '12px',
-            borderRadius: '3px',
+            width: '240px',
+            height: '50px',
+            padding: '6px 16px',
+            fontSize: '24px',
+            borderRadius: '6px',
             transition: 'all 0.2s ease',
             whiteSpace: 'nowrap',
             overflow: 'hidden',
@@ -895,6 +895,55 @@ export class UIManager {
                 this.setSelectButtonInactive(button);
             }
         });
+    }
+
+    /** 处理选择场景的按钮容器样式 */
+    handleSelectSceneButtons(scene) {
+        // 创建按钮容器
+        this.buttonContainer = document.createElement('div');
+        Object.assign(this.buttonContainer.style, {
+            position: 'absolute',
+            right: '40px',
+            top: '40px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '30px',
+            width: '240px',
+            padding: '20px',
+            zIndex: '1000'
+        });
+
+        const locations = scene.locations || [];
+
+        // 创建场景按钮组
+        const locationGroup = document.createElement('div');
+        Object.assign(locationGroup.style, {
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '10px',
+            alignItems: 'flex-end'
+        });
+        
+        // 创建角色按钮组
+        const characterGroup = document.createElement('div');
+        Object.assign(characterGroup.style, {
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '10px',
+            alignItems: 'flex-end'
+        });
+
+        // 创建继续按钮容器
+        const continueButtonContainer = document.createElement('div');
+        Object.assign(continueButtonContainer.style, {
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '10px',
+            alignItems: 'flex-end',
+            marginTop: '30px'
+        });
+
+        // ... 其他代码保持不变 ...
     }
 }
 

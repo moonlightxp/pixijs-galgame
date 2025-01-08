@@ -35,7 +35,7 @@ export const UI = {
             fontSize: 28,
             fill: 0xffffff,
             wordWrap: true,
-            wordWrapWidth: 1820 // SCREEN.width - (padding * 2)
+            wordWrapWidth: 1820
         },
         name: {
             fontSize: 32
@@ -45,9 +45,6 @@ export const UI = {
     },
     button: {
         base: {
-            position: 'absolute',
-            right: '20px',
-            top: '20px',
             width: '200px',
             height: '60px',
             padding: '12px 24px',
@@ -72,9 +69,9 @@ export const UI = {
             boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)'
         },
         next: {
-            left: '50%',
-            top: '50%',
-            transform: 'translate(-50%, -50%)'
+            position: 'absolute',
+            right: '20px',
+            top: '20px'
         }
     }
 };

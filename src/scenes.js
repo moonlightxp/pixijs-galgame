@@ -3,37 +3,59 @@ import { Assets, Sprite } from 'pixi.js';
 import { SCREEN } from './styles.js';
 import { ASSET_PATHS, CHARACTER_EFFECTS } from './config.js';
 
-/** 开始场景类 */
-export class StartScene {
+/** 基础场景类 */
+export class BaseScene {
     constructor(game) {
         this.game = game;
     }
 
-    /** 处理开始场景 */
+    /** 处理场景 */
     async handle(scene) {
-        // 清理现有UI和容器
+        // 1. 预加载场景资源（显示加载进度）
+        await this.game.assetManager.preloadSceneAssets(scene);
+
+        // 2. 清理旧场景
         this.game.uiManager.clearAll();
-        this.game.containers.character.removeChildren();
-        this.game.containers.background.removeChildren();
+        this.game.displayManager.clear();
 
-        // 加载并显示背景
+        // 3. 准备并显示新场景
         if (scene.background) {
-            const cacheKey = scene.background;
-            if (!this.game.assetCache.backgrounds.has(cacheKey)) {
-                const sprite = Sprite.from(await Assets.load(ASSET_PATHS.background + scene.background));
-                sprite.width = SCREEN.width;
-                sprite.height = SCREEN.height;
-                this.game.assetCache.backgrounds.set(cacheKey, sprite);
-            }
-            const bg = this.game.assetCache.backgrounds.get(cacheKey);
-            this.game.containers.background.addChild(bg);
+            await this.game.displayManager.setBackground(scene.background);
         }
-
-        // 播放音乐
         if (scene.music) {
-            this.game.musicManager.playMusic(scene.music);
+            await this.game.audioManager.playBGM(scene.music);
         }
+        await this.prepareSceneContent(scene);
+        await this.handleScene(scene);
+    }
 
+    /** 准备场景特定内容（由子类实现） */
+    async prepareSceneContent(scene) {
+        // 默认实现为空
+    }
+
+    /** 处理具体场景逻辑（由子类实现） */
+    async handleScene(scene) {
+        throw new Error('handleScene must be implemented by subclass');
+    }
+}
+
+/** 开始场景类 */
+export class StartScene extends BaseScene {
+    /** 准备场景特定内容 */
+    async prepareSceneContent(scene) {
+        // 准备场景显示内容
+        await this.game.displayManager.prepareSceneDisplay({
+            bg: scene.background,
+            character_left: scene.character_left,
+            character_center: scene.character_center,
+            character_right: scene.character_right,
+            active_characters: scene.active_characters
+        });
+    }
+
+    /** 处理具体场景逻辑 */
+    async handleScene(scene) {
         // 创建开始按钮
         const button = document.createElement('button');
         button.textContent = '开始游戏';
@@ -58,191 +80,38 @@ export class StartScene {
 }
 
 /** 对话场景类 */
-export class DialogScene {
-    constructor(game) {
-        this.game = game;
+export class DialogScene extends BaseScene {
+    /** 准备场景特定内容 */
+    async prepareSceneContent(scene) {
+        const content = scene.contents[this.game.state.dialog.currentDialogIndex];
+        if (!content) return;
+        
+        // 准备场景显示内容
+        await this.game.displayManager.prepareSceneDisplay(content);
     }
 
-    /** 处理对话场景 */
-    async handle(scene) {
+    /** 处理具体场景逻辑 */
+    async handleScene(scene) {
         // 创建对话框
         this.game.uiManager.createDialogBox();
-        
-        await this.preloadSceneAssets(scene);
         
         const content = scene.contents[this.game.state.dialog.currentDialogIndex];
         if (!content) return;
 
-        // 播放音乐
-        if (content.music) {
-            this.game.musicManager.playMusic(content.music);
+        // 播放语音
+        if (content.voice) {
+            await this.game.audioManager.playVoice(content.voice);
         }
 
-        await this.updateSceneDisplay(scene, this.game.state.dialog.currentDialogIndex);
+        // 显示文本
         await this.game.contentManager.showText(content.text, content.name);
-    }
-
-    /** 预加载场景所有资源 */
-    async preloadSceneAssets(scene) {
-        // 收集所有需要加载的资源
-        const assets = new Set();
-        const characterAssets = new Set();
-        const voiceAssets = new Set();
-
-        scene.contents.forEach(content => {
-            if (content.bg) assets.add(content.bg);
-            if (content.character_left) characterAssets.add(content.character_left);
-            if (content.character_center) characterAssets.add(content.character_center);
-            if (content.character_right) characterAssets.add(content.character_right);
-            if (content.voice) voiceAssets.add(content.voice);
-        });
-
-        // 加载所有背景
-        const bgPromises = Array.from(assets).map(async bg => {
-            const cacheKey = bg;
-            if (!this.game.assetCache.backgrounds.has(cacheKey)) {
-                const sprite = Sprite.from(await Assets.load(ASSET_PATHS.background + bg));
-                sprite.width = SCREEN.width;
-                sprite.height = SCREEN.height;
-                this.game.assetCache.backgrounds.set(cacheKey, sprite);
-            }
-        });
-
-        // 加载所有角色
-        const characterPromises = Array.from(characterAssets).map(async char => {
-            const cacheKey = char;
-            if (char && !this.game.assetCache.characters.has(cacheKey)) {
-                const sprite = Sprite.from(await Assets.load(ASSET_PATHS.character + char));
-                sprite.anchor.set(0.5);
-                this.game.assetCache.characters.set(cacheKey, sprite);
-            }
-        });
-
-        // 等待所有资源加载完成
-        await Promise.all([...bgPromises, ...characterPromises]);
-    }
-
-    /** 更新场景显示 */
-    async updateSceneDisplay(scene, dialogIndex) {
-        const content = scene.contents[dialogIndex];
-        if (!content) {
-            console.error('Content not found:', dialogIndex);
-            return;
-        }
-
-        const activeCharacters = content.active_characters || [];
-        const hasActiveCharactersChanged = 
-            !this.game.state.assets.currentActiveCharacters ||
-            activeCharacters.length !== this.game.state.assets.currentActiveCharacters.length ||
-            activeCharacters.some(char => !this.game.state.assets.currentActiveCharacters.includes(char)) ||
-            this.game.state.assets.currentActiveCharacters.some(char => !activeCharacters.includes(char));
-
-        // 更新背景
-        if (content.bg && content.bg !== this.game.state.assets.currentBg) {
-            const bg = this.game.assetCache.backgrounds.get(content.bg);
-            this.game.containers.background.removeChildren();
-            this.game.containers.background.addChild(bg);
-            this.game.state.assets.currentBg = content.bg;
-        }
-
-        // 更新角色
-        const positions = ['left', 'center', 'right'];
-        positions.forEach(pos => {
-            const contentKey = `character_${pos}`;
-            const stateKey = `currentCharacter${pos.charAt(0).toUpperCase() + pos.slice(1)}`;
-            
-            if (content[contentKey] !== this.game.state.assets[stateKey] || hasActiveCharactersChanged) {
-                if (content[contentKey]) {
-                    let character;
-                    const cacheKey = content[contentKey];
-                    if (this.game.assetCache.characters.has(cacheKey)) {
-                        character = this.game.assetCache.characters.get(cacheKey);
-                    } else {
-                        const baseCharacter = this.game.assetCache.characters.get(content[contentKey]);
-                        character = new Sprite(baseCharacter.texture);
-                        this.game.assetCache.characters.set(cacheKey, character);
-                    }
-                    this.setCharacterPosition(character, pos);
-                    character.characterPosition = pos;
-                    this.setCharacterEffect(character, activeCharacters);
-
-                    // 保存其他位置的角色
-                    const otherChars = this.game.containers.character.children
-                        .filter(c => c.characterPosition !== pos);
-                    
-                    if (hasActiveCharactersChanged) {
-                        otherChars.forEach(char => this.setCharacterEffect(char, activeCharacters));
-                    }
-
-                    this.game.containers.character.removeChildren();
-                    
-                    // 按位置顺序重新添加角色
-                    positions.forEach(addPos => {
-                        if (addPos === pos) {
-                            this.game.containers.character.addChild(character);
-                        } else {
-                            const existingChar = otherChars.find(c => c.characterPosition === addPos);
-                            if (existingChar) {
-                                this.game.containers.character.addChild(existingChar);
-                            }
-                        }
-                    });
-                } else {
-                    const others = this.game.containers.character.children
-                        .filter(c => c.characterPosition !== pos);
-                    
-                    if (hasActiveCharactersChanged) {
-                        others.forEach(char => this.setCharacterEffect(char, activeCharacters));
-                    }
-
-                    this.game.containers.character.removeChildren();
-                    others.forEach(char => this.game.containers.character.addChild(char));
-                }
-                this.game.state.assets[stateKey] = content[contentKey];
-            }
-        });
-
-        if (hasActiveCharactersChanged) {
-            this.game.state.assets.currentActiveCharacters = [...activeCharacters];
-        }
-    }
-
-    /** 设置角色效果 */
-    setCharacterEffect(character, activeCharacters) {
-        const isActive = activeCharacters.includes(`character_${character.characterPosition}`);
-        const effects = isActive ? CHARACTER_EFFECTS.active : CHARACTER_EFFECTS.inactive;
-        character.tint = effects.tint;
-        character.alpha = effects.alpha;
-    }
-
-    /** 设置角色位置 */
-    setCharacterPosition(character, position = 'center') {
-        const pos = position || 'center';
-        switch (pos) {
-            case 'left':
-                character.anchor.set(0, 1);
-                break;
-            case 'right':
-                character.anchor.set(1, 1);
-                break;
-            default:
-                character.anchor.set(0.5, 1);
-                break;
-        }
-        const layoutPosition = this.game.layout.character.positions[pos];
-        character.x = layoutPosition.x;
-        character.y = layoutPosition.y;
     }
 }
 
 /** 选择场景类 */
-export class SelectScene {
-    constructor(game) {
-        this.game = game;
-    }
-
-    /** 处理选择场景 */
-    async handle(scene) {
+export class SelectScene extends BaseScene {
+    /** 处理具体场景逻辑 */
+    async handleScene(scene) {
         // TODO: 实现选择场景的逻辑
         console.log('Select scene handling is not implemented yet');
     }

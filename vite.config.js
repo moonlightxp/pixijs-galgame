@@ -10,7 +10,6 @@ export default defineConfig({
                 main: 'index.html'
             }
         },
-        copyPublicDir: true
-    },
-    publicDir: 'assets'
+        copyPublicDir: false
+    }
 }); 

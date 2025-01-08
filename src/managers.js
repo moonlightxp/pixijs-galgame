@@ -568,7 +568,7 @@ export class UIManager {
         this.dialogBox.eventMode = 'static';
         this.dialogBox.cursor = 'pointer';
         this.addEventListeners(this.dialogBox, {
-            click: () => this.game.contentManager.handleTextClick()
+            pointerdown: () => this.game.contentManager.handleTextClick()
         });
         
         // 创建名字文本

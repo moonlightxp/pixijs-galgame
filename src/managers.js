@@ -471,33 +471,25 @@ export class UIManager {
     /** 调整画布大小 */
     resizeGame() {
         const width = window.innerWidth;
-        const scale = width / SCREEN.width;
-        const height = SCREEN.height * scale;
+        const height = window.innerHeight;
         
-        // 调整容器大小
-        this.game.wrapper.style.width = `${width}px`;
-        this.game.wrapper.style.height = `${height}px`;
+        // 计算保持宽高比的缩放比例
+        const scale = Math.min(width / SCREEN.width, height / SCREEN.height);
+        
+        // 计算实际尺寸（保持宽高比）
+        const targetWidth = SCREEN.width * scale;
+        const targetHeight = SCREEN.height * scale;
+        
+        // 设置容器尺寸
+        this.game.wrapper.style.width = `${targetWidth}px`;
+        this.game.wrapper.style.height = `${targetHeight}px`;
         
         // 调整渲染器大小
-        this.game.app.renderer.resize(width, height);
-
-        // 调整所有容器的缩放
-        const containers = {
-            background: this.game.containers.background,
-            character: this.game.containers.character,
-            ui: this.game.containers.ui
-        };
-
-        // 设置每个容器的缩放和位置
-        Object.values(containers).forEach(container => {
-            if (container) {
-                container.scale.set(scale);
-                // 保持容器的相对位置
-                container.position.set(
-                    (width - SCREEN.width * scale) / 2,
-                    (height - SCREEN.height * scale) / 2
-                );
-            }
+        this.game.app.renderer.resize(targetWidth, targetHeight);
+        
+        // 统一缩放所有容器
+        Object.values(this.game.containers).forEach(container => {
+            container.scale.set(scale);
         });
     }
 

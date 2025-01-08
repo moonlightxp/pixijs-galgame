@@ -36,9 +36,13 @@ class GalGameEngine {
 
     /** 初始化应用 */
     async init() {
+        // 初始化 PixiJS 应用
         await this.app.init({
             width: SCREEN.width,
             height: SCREEN.height,
+            backgroundColor: 0x000000,
+            autoDensity: true,
+            resolution: window.devicePixelRatio,
             ...APP_CONFIG
         });
 

@@ -242,9 +242,16 @@ export class AudioManager {
         }
 
         const elementKey = type;
+        // 确保完全停止旧的音频
         if (this.audioElements[elementKey]) {
-            this.audioElements[elementKey].pause();
+            const oldAudio = this.audioElements[elementKey];
+            oldAudio.pause();
+            oldAudio.currentTime = 0;
+            oldAudio.src = '';
+            oldAudio.remove();  // 从 DOM 中移除
             this.audioElements[elementKey] = null;
+            // 等待一小段时间确保资源被释放
+            await new Promise(resolve => setTimeout(resolve, 50));
         }
 
         try {
@@ -255,6 +262,11 @@ export class AudioManager {
             clonedAudio.currentTime = 0;
             clonedAudio.volume = 1;
             clonedAudio.loop = type === 'music';
+            
+            // 添加错误处理
+            clonedAudio.onerror = (e) => {
+                console.warn(`Audio error for ${type}:`, e);
+            };
             
             this.audioElements[elementKey] = clonedAudio;
             
@@ -267,6 +279,7 @@ export class AudioManager {
                 if (error.name === 'NotAllowedError') {
                     this.pendingAudio[type] = audioFile;
                 }
+                // 即使播放失败也不影响游戏继续
                 console.warn(`Failed to play ${type}:`, error);
             }
         } catch (error) {
@@ -285,14 +298,20 @@ export class AudioManager {
     }
 
     /** 停止音频 */
-    stopAudio(type = 'music') {
+    async stopAudio(type = 'music') {
         if (this.audioElements[type]) {
-            this.audioElements[type].pause();
+            const audio = this.audioElements[type];
+            audio.pause();
+            audio.currentTime = 0;
+            audio.src = '';
+            audio.remove();  // 从 DOM 中移除
             this.audioElements[type] = null;
         }
         const currentKey = type === 'music' ? 'currentBGM' : 'currentVoice';
         this[currentKey] = null;
         this.pendingAudio[type] = null;
+        // 等待一小段时间确保资源被释放
+        await new Promise(resolve => setTimeout(resolve, 50));
     }
 
     /** 播放背景音乐 */

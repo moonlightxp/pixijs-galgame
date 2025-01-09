@@ -115,13 +115,13 @@ export class SelectScene extends BaseScene {
         this.buttonContainer = document.createElement('div');
         Object.assign(this.buttonContainer.style, {
             position: 'absolute',
-            right: '20px',
-            top: '20px',
+            right: '40px',
+            top: '40px',
             display: 'flex',
             flexDirection: 'column',
-            gap: '15px',
-            width: '120px',
-            padding: '10px',
+            gap: '30px',
+            width: '240px',
+            padding: '20px',
             zIndex: '1000'
         });
 
@@ -132,19 +132,10 @@ export class SelectScene extends BaseScene {
         Object.assign(locationGroup.style, {
             display: 'flex',
             flexDirection: 'column',
-            gap: '5px',
+            gap: '10px',
             alignItems: 'flex-end'
         });
         
-        // 4. 创建角色按钮组
-        const characterGroup = document.createElement('div');
-        Object.assign(characterGroup.style, {
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '5px',
-            alignItems: 'flex-end'
-        });
-
         // 创建场景按钮
         locations.forEach((location, locationIndex) => {
             const button = this.game.uiManager.createSelectButton(location.name, async () => {
@@ -153,7 +144,7 @@ export class SelectScene extends BaseScene {
                 this.game.uiManager.updateSelectButtonStates(locationGroup, locationIndex);
                 
                 await this.showLocation(location);
-                this.updateCharacterButtons(location.characters, characterGroup);
+                await this.updateCharacterButtons(location.characters, characterGroup);
             });
 
             if (locationIndex === this.selectedLocation) {
@@ -163,15 +154,24 @@ export class SelectScene extends BaseScene {
             }
             locationGroup.appendChild(button);
         });
+        
+        // 4. 创建角色按钮组
+        const characterGroup = document.createElement('div');
+        Object.assign(characterGroup.style, {
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '10px',
+            alignItems: 'flex-end'
+        });
 
         // 5. 创建继续按钮容器
         const continueButtonContainer = document.createElement('div');
         Object.assign(continueButtonContainer.style, {
             display: 'flex',
             flexDirection: 'column',
-            gap: '5px',
+            gap: '10px',
             alignItems: 'flex-end',
-            marginTop: '15px'
+            marginTop: '30px'
         });
         
         // 6. 组装所有按钮组

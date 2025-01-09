@@ -36,9 +36,13 @@ class GalGameEngine {
 
     /** 初始化应用 */
     async init() {
+        // 初始化 PixiJS 应用
         await this.app.init({
             width: SCREEN.width,
             height: SCREEN.height,
+            backgroundColor: 0x000000,
+            autoDensity: true,
+            resolution: window.devicePixelRatio,
             ...APP_CONFIG
         });
 
@@ -58,12 +62,29 @@ class GalGameEngine {
         this.uiManager.resizeGame();
         window.addEventListener('resize', () => this.uiManager.resizeGame());
 
-        // 加载初始场景
-        await this.sceneManager.switchScene('start_scene');
+        // 显示加载界面
+        this.uiManager.createLoadingScreen();
+
+        try {
+            // 预加载所有资源
+            await this.assetManager.preloadAllAssets();
+            
+            // 加载完成后，切换到开始场景
+            await this.sceneManager.switchScene('start_scene');
+        } catch (error) {
+            console.error('Failed to initialize game:', error);
+            // 显示错误信息
+            if (this.uiManager.loadingText) {
+                this.uiManager.loadingText.textContent = '资源加载失败，请刷新页面重试';
+                this.uiManager.loadingText.style.color = '#ff4444';
+            }
+        }
     }
 }
 
 const galGameEngine = new GalGameEngine();
 
-// 启动环境
-galGameEngine.init();
+// 启动游戏
+galGameEngine.init().catch(error => {
+    console.error('Failed to start game:', error);
+});

@@ -1,6 +1,6 @@
 {
-  "_SharedSystems-B__dKDyb.js": {
-    "file": "assets/SharedSystems-B__dKDyb.js",
+  "_SharedSystems-dppK1XA-.js": {
+    "file": "assets/SharedSystems-dppK1XA-.js",
     "name": "SharedSystems",
     "imports": [
       "index.html",
@@ -12,7 +12,7 @@
     "name": "colorToUniform"
   },
   "index.html": {
-    "file": "assets/main-C345_b3t.js",
+    "file": "assets/main-DPoX6RE1.js",
     "name": "main",
     "src": "index.html",
     "isEntry": true,
@@ -24,7 +24,7 @@
     ]
   },
   "node_modules/pixi.js/lib/environment-browser/browserAll.mjs": {
-    "file": "assets/browserAll-DLbpM5pL.js",
+    "file": "assets/browserAll-DCo9-vI7.js",
     "name": "browserAll",
     "src": "node_modules/pixi.js/lib/environment-browser/browserAll.mjs",
     "isDynamicEntry": true,
@@ -35,7 +35,7 @@
     ]
   },
   "node_modules/pixi.js/lib/environment-webworker/webworkerAll.mjs": {
-    "file": "assets/webworkerAll-BZ8OBmA5.js",
+    "file": "assets/webworkerAll-BFVhVHBZ.js",
     "name": "webworkerAll",
     "src": "node_modules/pixi.js/lib/environment-webworker/webworkerAll.mjs",
     "isDynamicEntry": true,
@@ -45,25 +45,25 @@
     ]
   },
   "node_modules/pixi.js/lib/rendering/renderers/gl/WebGLRenderer.mjs": {
-    "file": "assets/WebGLRenderer-aycPSyJY.js",
+    "file": "assets/WebGLRenderer-mR5NEt5R.js",
     "name": "WebGLRenderer",
     "src": "node_modules/pixi.js/lib/rendering/renderers/gl/WebGLRenderer.mjs",
     "isDynamicEntry": true,
     "imports": [
       "index.html",
       "_colorToUniform-C2GHuDhf.js",
-      "_SharedSystems-B__dKDyb.js"
+      "_SharedSystems-dppK1XA-.js"
     ]
   },
   "node_modules/pixi.js/lib/rendering/renderers/gpu/WebGPURenderer.mjs": {
-    "file": "assets/WebGPURenderer-4Pu7J4dm.js",
+    "file": "assets/WebGPURenderer-B1PPyHdn.js",
     "name": "WebGPURenderer",
     "src": "node_modules/pixi.js/lib/rendering/renderers/gpu/WebGPURenderer.mjs",
     "isDynamicEntry": true,
     "imports": [
       "index.html",
       "_colorToUniform-C2GHuDhf.js",
-      "_SharedSystems-B__dKDyb.js"
+      "_SharedSystems-dppK1XA-.js"
     ]
   }
 }

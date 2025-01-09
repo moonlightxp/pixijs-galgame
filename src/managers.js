@@ -154,6 +154,18 @@ export class AssetManager {
         const cacheKey = `${type}:${path}`;
         if (!this.cache.audios.has(cacheKey)) {
             const audio = new Audio(ASSET_PATHS[type] + path);
+            // 强制预加载
+            await new Promise((resolve, reject) => {
+                audio.preload = 'auto';  // 设置预加载模式
+                audio.load();  // 强制加载
+                
+                // 监听加载完成事件
+                audio.addEventListener('canplaythrough', () => resolve(), { once: true });
+                audio.addEventListener('error', (e) => reject(e), { once: true });
+                
+                // 设置超时
+                setTimeout(() => reject(new Error('Audio load timeout')), 10000);
+            });
             this.cache.audios.set(cacheKey, audio);
         }
         return this.cache.audios.get(cacheKey);
@@ -237,13 +249,17 @@ export class AudioManager {
 
         try {
             const audio = await this.game.assetManager.loadAudio(audioFile, type);
-            audio.currentTime = 0;
-            audio.volume = 1;
-            audio.loop = type === 'music';
-            this.audioElements[elementKey] = audio;
+            
+            // 克隆音频元素以避免播放冲突
+            const clonedAudio = audio.cloneNode();
+            clonedAudio.currentTime = 0;
+            clonedAudio.volume = 1;
+            clonedAudio.loop = type === 'music';
+            
+            this.audioElements[elementKey] = clonedAudio;
             
             try {
-                await audio.play();
+                await clonedAudio.play();
                 if (type === 'music' || type === 'voice') {
                     this[currentKey] = audioFile;
                 }
@@ -251,10 +267,10 @@ export class AudioManager {
                 if (error.name === 'NotAllowedError') {
                     this.pendingAudio[type] = audioFile;
                 }
-                throw error;
+                console.warn(`Failed to play ${type}:`, error);
             }
         } catch (error) {
-            console.warn(`Failed to play ${type}:`, error);
+            console.warn(`Failed to load ${type}:`, error);
         }
     }
 

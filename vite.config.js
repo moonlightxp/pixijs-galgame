@@ -8,8 +8,20 @@ export default defineConfig({
         rollupOptions: {
             input: {
                 main: 'index.html'
+            },
+            output: {
+                entryFileNames: 'assets/[name]-[hash].js',
+                chunkFileNames: 'assets/[name]-[hash].js',
+                assetFileNames: 'assets/[name]-[hash].[ext]'
             }
         },
-        copyPublicDir: false
+        copyPublicDir: false,
+        manifest: true,
+        emptyOutDir: true
+    },
+    server: {
+        headers: {
+            'Cache-Control': 'no-store'
+        }
     }
 }); 

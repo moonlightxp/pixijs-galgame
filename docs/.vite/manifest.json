@@ -1,6 +1,6 @@
 {
-  "_SharedSystems-D50gvZfm.js": {
-    "file": "assets/SharedSystems-D50gvZfm.js",
+  "_SharedSystems-B__dKDyb.js": {
+    "file": "assets/SharedSystems-B__dKDyb.js",
     "name": "SharedSystems",
     "imports": [
       "index.html",
@@ -12,7 +12,7 @@
     "name": "colorToUniform"
   },
   "index.html": {
-    "file": "assets/main-BaCDGAhX.js",
+    "file": "assets/main-C345_b3t.js",
     "name": "main",
     "src": "index.html",
     "isEntry": true,
@@ -24,7 +24,7 @@
     ]
   },
   "node_modules/pixi.js/lib/environment-browser/browserAll.mjs": {
-    "file": "assets/browserAll-D-mPbdDi.js",
+    "file": "assets/browserAll-DLbpM5pL.js",
     "name": "browserAll",
     "src": "node_modules/pixi.js/lib/environment-browser/browserAll.mjs",
     "isDynamicEntry": true,
@@ -35,7 +35,7 @@
     ]
   },
   "node_modules/pixi.js/lib/environment-webworker/webworkerAll.mjs": {
-    "file": "assets/webworkerAll-sU39T9c_.js",
+    "file": "assets/webworkerAll-BZ8OBmA5.js",
     "name": "webworkerAll",
     "src": "node_modules/pixi.js/lib/environment-webworker/webworkerAll.mjs",
     "isDynamicEntry": true,
@@ -45,25 +45,25 @@
     ]
   },
   "node_modules/pixi.js/lib/rendering/renderers/gl/WebGLRenderer.mjs": {
-    "file": "assets/WebGLRenderer-CiVPdNLp.js",
+    "file": "assets/WebGLRenderer-aycPSyJY.js",
     "name": "WebGLRenderer",
     "src": "node_modules/pixi.js/lib/rendering/renderers/gl/WebGLRenderer.mjs",
     "isDynamicEntry": true,
     "imports": [
       "index.html",
       "_colorToUniform-C2GHuDhf.js",
-      "_SharedSystems-D50gvZfm.js"
+      "_SharedSystems-B__dKDyb.js"
     ]
   },
   "node_modules/pixi.js/lib/rendering/renderers/gpu/WebGPURenderer.mjs": {
-    "file": "assets/WebGPURenderer-VsfZebyA.js",
+    "file": "assets/WebGPURenderer-4Pu7J4dm.js",
     "name": "WebGPURenderer",
     "src": "node_modules/pixi.js/lib/rendering/renderers/gpu/WebGPURenderer.mjs",
     "isDynamicEntry": true,
     "imports": [
       "index.html",
       "_colorToUniform-C2GHuDhf.js",
-      "_SharedSystems-D50gvZfm.js"
+      "_SharedSystems-B__dKDyb.js"
     ]
   }
 }

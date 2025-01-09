@@ -86,5 +86,5 @@ class GalGameEngine {
 const galGameEngine = new GalGameEngine();
 
 // 启动游戏
-test.playAll();
-// galGameEngine.init();
+// test.playAll();
+galGameEngine.init();
